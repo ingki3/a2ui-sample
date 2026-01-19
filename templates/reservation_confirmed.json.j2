@@ -1,0 +1,65 @@
+{
+  "surfaceUpdate": {
+    "surfaceId": "reservation_confirmed",
+    "components": [
+      {
+        "id": "{{ uid }}_root",
+        "component": {
+          "Column": {
+            "children": {
+              "explicitList": [
+                "{{ uid }}_icon", "{{ uid }}_title", "{{ uid }}_details_card", "{{ uid }}_divider", "{{ uid }}_msg"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_icon",
+        "component": { "Text": { "text": { "literalString": "✅" }, "usageHint": "h1" } }
+      },
+      {
+        "id": "{{ uid }}_title",
+        "component": { "Text": { "text": { "literalString": "Reservation Confirmed!" }, "usageHint": "h2" } }
+      },
+      {
+        "id": "{{ uid }}_details_card",
+        "component": {
+            "Column": {
+                "children": {
+                    "explicitList": ["{{ uid }}_rest_name", "{{ uid }}_date", "{{ uid }}_guests"]
+                }
+            }
+        }
+      },
+      {
+        "id": "{{ uid }}_rest_name",
+        "component": { "Text": { "text": { "literalString": "📍 {{ restaurant_name }}" }, "usageHint": "h3" } }
+      },
+      {
+        "id": "{{ uid }}_date",
+        "component": { "Text": { "text": { "literalString": "📅 {{ date }}" }, "usageHint": "body" } }
+      },
+      {
+        "id": "{{ uid }}_guests",
+        "component": { "Text": { "text": { "literalString": "👤 {{ guests }} Guests" }, "usageHint": "body" } }
+      },
+      {
+        "id": "{{ uid }}_divider",
+        "component": { "Text": { "text": { "literalString": "---" }, "usageHint": "caption" } }
+      },
+      {
+        "id": "{{ uid }}_msg",
+        "component": { "Text": { "text": { "literalString": "A confirmation email has been sent to you." }, "usageHint": "body" } }
+      }
+    ]
+  },
+  "dataModelUpdate": {
+    "surfaceId": "reservation_confirmed",
+    "contents": []
+  },
+  "beginRendering": {
+    "surfaceId": "reservation_confirmed",
+    "root": "{{ uid }}_root"
+  }
+}

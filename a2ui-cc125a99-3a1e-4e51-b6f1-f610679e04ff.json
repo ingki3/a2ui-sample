@@ -1,0 +1,90 @@
+[
+  {
+    "id": "root",
+    "component": {
+      "Column": {
+        "children": {
+          "explicitList": [
+            "title",
+            "chartList"
+          ]
+        },
+        "alignment": "center",
+        "distribution": "start"
+      }
+    }
+  },
+  {
+    "id": "title",
+    "component": {
+      "Text": {
+        "text": {
+          "path": "/stock/name"
+        },
+        "usageHint": "h2"
+      }
+    }
+  },
+  {
+    "id": "chartList",
+    "component": {
+      "List": {
+        "children": {
+          "template": {
+            "componentId": "priceBarTemplate",
+            "dataBinding": "/stock/prices"
+          }
+        },
+        "direction": "horizontal",
+        "alignment": "end"
+      }
+    }
+  },
+  {
+    "id": "priceBarTemplate",
+    "component": {
+      "Column": {
+        "children": [
+          "priceFill",
+          "priceValue",
+          "priceDate"
+        ],
+        "alignment": "center",
+        "distribution": "end"
+      }
+    }
+  },
+  {
+    "id": "priceFill",
+    "component": {
+      "Text": {
+        "text": {
+          "literalString": "█"
+        },
+        "usageHint": "body"
+      }
+    }
+  },
+  {
+    "id": "priceValue",
+    "component": {
+      "Text": {
+        "text": {
+          "path": "./close"
+        },
+        "usageHint": "caption"
+      }
+    }
+  },
+  {
+    "id": "priceDate",
+    "component": {
+      "Text": {
+        "text": {
+          "path": "./date"
+        },
+        "usageHint": "caption"
+      }
+    }
+  }
+]

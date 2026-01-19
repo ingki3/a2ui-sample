@@ -1,0 +1,49 @@
+{
+  "surfaceUpdate": {
+    "surfaceId": "stock_chart",
+    "components": [
+      {
+        "id": "{{ uid }}_root",
+        "component": {
+          "Column": {
+            "children": {
+              "explicitList": [
+                "{{ uid }}_title", "{{ uid }}_chart_viz", "{{ uid }}_current_price"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_title",
+        "component": { "Text": { "text": { "literalString": "📈 {{ symbol }} Stock Price (1 Mo)" }, "usageHint": "h2" } }
+      },
+      {
+        "id": "{{ uid }}_current_price",
+        "component": { "Text": { "text": { "literalString": "Current: {{ current_price }}" }, "usageHint": "h3" } }
+      },
+      {
+        "id": "{{ uid }}_chart_viz",
+        "component": {
+          "Chart": {
+            "data": [
+              {% for p in prices %}
+              { "label": "{{ p.label }}", "value": {{ p.value }} }
+              {% if not loop.last %},{% endif %}
+              {% endfor %}
+            ],
+            "color": "#0F9D58"
+          }
+        }
+      }
+    ]
+  },
+  "dataModelUpdate": {
+    "surfaceId": "stock_chart",
+    "contents": []
+  },
+  "beginRendering": {
+    "surfaceId": "stock_chart",
+    "root": "{{ uid }}_root"
+  }
+}
