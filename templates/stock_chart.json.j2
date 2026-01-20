@@ -16,7 +16,7 @@
       },
       {
         "id": "{{ uid }}_title",
-        "component": { "Text": { "text": { "literalString": "📈 {{ symbol }} Stock Price (1 Mo)" }, "usageHint": "h2" } }
+        "component": { "Text": { "text": { "literalString": "📈 {{ symbol }} Stock Price (1 Year)" }, "usageHint": "h2" } }
       },
       {
         "id": "{{ uid }}_current_price",
@@ -28,7 +28,7 @@
           "Chart": {
             "data": [
               {% for p in prices %}
-              { "label": "{{ p.label }}", "value": {{ p.value }} }
+              { "time": "{{ p.time }}", "value": {{ p.value }} }
               {% if not loop.last %},{% endif %}
               {% endfor %}
             ],

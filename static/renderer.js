@@ -114,72 +114,68 @@ function addA2UIWidget(a2uiData) {
                 img.style.maxWidth = '100%';
                 img.style.borderRadius = '8px';
                 return img;
+            } else if (comp.IFrame) {
+                const iframe = document.createElement('iframe');
+                iframe.className = 'a2ui-iframe';
+                iframe.src = comp.IFrame.url.literalString;
+                iframe.style.width = comp.IFrame.width || '100%';
+                iframe.style.height = (comp.IFrame.height || 300) + 'px';
+                iframe.style.border = 'none';
+                iframe.style.borderRadius = '8px';
+                iframe.setAttribute('loading', 'lazy');
+                iframe.setAttribute('allowfullscreen', '');
+                iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+                return iframe;
             } else if (comp.Chart) {
                 const chartContainer = document.createElement('div');
                 chartContainer.className = 'a2ui-chart';
                 chartContainer.style.width = '100%';
-                chartContainer.style.height = '200px';
+                chartContainer.style.height = '300px'; // Increased height for better visibility
                 chartContainer.style.padding = '10px 0';
 
                 const data = comp.Chart.data || [];
                 if (data.length < 2) return chartContainer;
 
-                const values = data.map(d => d.value);
-                const minVal = Math.min(...values);
-                const maxVal = Math.max(...values);
-                const range = maxVal - minVal || 1;
+                // Wait for container to be in DOM to render correctly (or render immediately and resize)
+                // Since we are returning the element, we might need a small timeout or IntersectionObserver,
+                // but usually LightweightCharts works if we create it.
+                // However, the container needs dimensions. We set explicit height. width is 100%.
 
-                // SVG dimensions
-                const width = 600; // coordinate space
-                const height = 200;
-                const padding = 20;
+                setTimeout(() => {
+                    const chart = LightweightCharts.createChart(chartContainer, {
+                        width: chartContainer.clientWidth,
+                        height: 300,
+                        layout: {
+                            background: { type: 'solid', color: 'transparent' },
+                            textColor: '#333',
+                        },
+                        grid: {
+                            vertLines: { color: '#eee' },
+                            horzLines: { color: '#eee' },
+                        },
+                    });
 
-                // Create SVG
-                const svgNs = "http://www.w3.org/2000/svg";
-                const svg = document.createElementNS(svgNs, "svg");
-                svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
-                svg.style.width = '100%';
-                svg.style.height = '100%';
+                    const areaSeries = chart.addSeries(LightweightCharts.AreaSeries, {
+                        lineColor: comp.Chart.color || '#2962FF',
+                        topColor: (comp.Chart.color || '#2962FF') + '66', // Add transparency
+                        bottomColor: (comp.Chart.color || '#2962FF') + '04',
+                    });
 
-                // Calculate points
-                const points = data.map((d, i) => {
-                    const x = padding + (i / (data.length - 1)) * (width - 2 * padding);
-                    const y = height - padding - ((d.value - minVal) / range) * (height - 2 * padding);
-                    return { x: x, y: y };
-                });
+                    areaSeries.setData(data); // data is already in { time, value } format
 
-                // Path for area (closed loop)
-                let dArea = `M ${points[0].x} ${height - padding} L ${points[0].x} ${points[0].y}`;
-                points.forEach(p => dArea += ` L ${p.x} ${p.y}`);
-                dArea += ` L ${points[points.length - 1].x} ${height - padding} Z`;
+                    chart.timeScale().fitContent();
 
-                // Path for line (stroke)
-                let dLine = `M ${points[0].x} ${points[0].y}`;
-                points.forEach(p => dLine += ` L ${p.x} ${p.y}`);
+                    // Handle resize
+                    const resizeObserver = new ResizeObserver(entries => {
+                        if (entries.length === 0 || !entries[0].contentRect) return;
+                        const newRect = entries[0].contentRect;
+                        if (newRect.width > 0) {
+                            chart.applyOptions({ width: newRect.width });
+                        }
+                    });
+                    resizeObserver.observe(chartContainer);
+                }, 100);
 
-                // Area Path
-                const areaPath = document.createElementNS(svgNs, "path");
-                areaPath.setAttribute("d", dArea);
-                areaPath.setAttribute("fill", `${comp.Chart.color}33`); // add transparency
-                areaPath.setAttribute("stroke", "none");
-                svg.appendChild(areaPath);
-
-                // Line Path
-                const linePath = document.createElementNS(svgNs, "path");
-                linePath.setAttribute("d", dLine);
-                linePath.setAttribute("fill", "none");
-                linePath.setAttribute("stroke", comp.Chart.color);
-                linePath.setAttribute("stroke-width", "2");
-                svg.appendChild(linePath);
-
-                // optional: add simple axis line
-                const axisPath = document.createElementNS(svgNs, "path");
-                axisPath.setAttribute("d", `M ${padding} ${height - padding} L ${width - padding} ${height - padding}`);
-                axisPath.setAttribute("stroke", "#ccc");
-                axisPath.setAttribute("stroke-width", "1");
-                svg.appendChild(axisPath);
-
-                chartContainer.appendChild(svg);
                 return chartContainer;
             }
             return null;
@@ -241,7 +237,8 @@ async function sendMessage() {
     const isUiMode = uiModeToggle.checked;
 
     try {
-        const response = await fetch('/chat', {
+        // Use streaming endpoint
+        const response = await fetch('/chat/stream', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -250,12 +247,50 @@ async function sendMessage() {
             body: JSON.stringify({ text: text })
         });
 
-        const data = await response.json();
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
 
-        if (data.kind === 'a2ui') {
-            addA2UIWidget(data.data);
-        } else {
-            addMessage(data.text || 'No response text', false);
+        let streamingTextDiv = null; // For accumulating streaming text
+        let accumulatedText = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+
+            let eventType = null;
+
+            for (const line of lines) {
+                if (line.startsWith('event: ')) {
+                    eventType = line.slice(7).trim();
+                } else if (line.startsWith('data: ') && eventType) {
+                    const data = JSON.parse(line.slice(6));
+
+                    if (eventType === 'a2ui') {
+                        addA2UIWidget(data.data);
+                    } else if (eventType === 'text') {
+                        // Streaming text - accumulate and display
+                        accumulatedText += data.text;
+
+                        if (!streamingTextDiv) {
+                            streamingTextDiv = document.createElement('div');
+                            streamingTextDiv.className = 'message agent-msg streaming-text';
+                            messagesDiv.appendChild(streamingTextDiv);
+                        }
+                        streamingTextDiv.textContent = accumulatedText;
+                        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                    } else if (eventType === 'done') {
+                        // Finalize streaming
+                        if (streamingTextDiv) {
+                            streamingTextDiv.classList.remove('streaming-text');
+                        }
+                    }
+
+                    eventType = null;
+                }
+            }
         }
     } catch (e) {
         console.error(e);

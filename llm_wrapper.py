@@ -100,7 +100,15 @@ class LLMWrapper:
         
         self.model = genai.GenerativeModel(
             model_name='gemini-2.0-flash',
-            tools=[auth_tool]
+            tools=[auth_tool],
+            system_instruction="""You are a helpful assistant that uses tools to fulfill user requests.
+
+IMPORTANT RULES:
+1. When the user asks for something that can be done with a tool, ALWAYS call the tool immediately.
+2. Do NOT ask clarifying questions - use reasonable defaults if optional parameters are not specified.
+3. For restaurant searches: if cuisine is not specified, search for all types.
+4. For stock queries: extract the stock symbol from the company name (e.g., Apple -> AAPL, Tesla -> TSLA, Nvidia -> NVDA).
+5. Prefer action over conversation."""
         )
         self.chat = self.model.start_chat()
 
@@ -146,3 +154,59 @@ class LLMWrapper:
                 "type": "text",
                 "text": f"Sorry, I encountered an error connecting to my brain. ({str(e)})"
             }
+
+    def generate_commentary(self, symbol: str, current_price: float, price_change_pct: float = None) -> str:
+        """
+        Generate AI commentary about a stock based on its data.
+        """
+        try:
+            # Use a simple model without tools for commentary generation
+            commentary_model = genai.GenerativeModel(model_name='gemini-2.0-flash')
+            
+            prompt = f"""You are a helpful financial analyst assistant. Provide a brief, informative commentary about the stock {symbol}.
+Current price: ${current_price:.2f}
+{f"Recent price change: {price_change_pct:.1f}%" if price_change_pct else ""}
+
+Guidelines:
+- Keep your response concise (2-3 sentences max)
+- Be informative but neutral (no financial advice)
+- Mention any relevant context about the company
+- Respond in Korean
+
+Example format: "[Company name]는 [brief description]. 현재 가격은 [price context]."
+"""
+            response = commentary_model.generate_content(prompt)
+            return response.text.strip()
+        except Exception as e:
+            print(f"Commentary generation error: {e}")
+            return ""
+
+    async def generate_commentary_stream(self, symbol: str, current_price: float):
+        """
+        Stream AI commentary about a stock, yielding text chunks.
+        """
+        try:
+            commentary_model = genai.GenerativeModel(model_name='gemini-2.0-flash')
+            
+            prompt = f"""You are a helpful financial analyst assistant. Provide a brief, informative commentary about the stock {symbol}.
+Current price: ${current_price:.2f}
+
+Guidelines:
+- Keep your response concise (2-3 sentences max)
+- Be informative but neutral (no financial advice)
+- Mention any relevant context about the company
+- Respond in Korean
+
+Example format: "[Company name]는 [brief description]. 현재 가격은 [price context]."
+"""
+            response = commentary_model.generate_content(prompt, stream=True)
+            
+            for chunk in response:
+                if chunk.text:
+                    yield chunk.text
+                    
+        except Exception as e:
+            print(f"Streaming commentary error: {e}")
+            yield f"(코멘터리 생성 중 오류 발생)"
+
+

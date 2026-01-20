@@ -43,12 +43,17 @@ class RowComponent(ComponentBase):
     children: ColumnChildren # Reuse ColumnChildren because structure is same (explicitList)
 
 class ChartDataPoint(BaseModel):
-    label: str
+    time: str
     value: float
 
 class ChartComponent(ComponentBase):
     data: List[ChartDataPoint]
     color: Optional[str] = "#0F9D58" # Default Google Green
+
+class IFrameComponent(ComponentBase):
+    url: TextContent
+    height: Optional[int] = 300
+    width: Optional[str] = "100%"
 
 # Union of all possible component types
 class ComponentType(BaseModel):
@@ -59,6 +64,7 @@ class ComponentType(BaseModel):
     Row: Optional[RowComponent] = None
     Image: Optional[ImageComponent] = None
     Chart: Optional[ChartComponent] = None
+    IFrame: Optional[IFrameComponent] = None
 
 class ComponentEntry(BaseModel):
     id: str

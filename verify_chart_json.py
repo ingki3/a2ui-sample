@@ -24,7 +24,12 @@ def verify_chart():
         print("SUCCESS: Found Chart component")
         print(f"Data points: {len(chart_comp.data)}")
         if len(chart_comp.data) > 0:
-            print(f"First point: {chart_comp.data[0]}")
+            point = chart_comp.data[0]
+            print(f"First point: {point}")
+            if "time" not in point:
+                print("FAILED: 'time' key missing in data point")
+            if "value" not in point:
+                print("FAILED: 'value' key missing in data point")
             print(f"Color: {chart_comp.color}")
     else:
         print("FAILED: Chart component not found in response")

@@ -32,19 +32,19 @@
       {
         "id": "{{ uid }}_rest_row_{{ loop.index }}",
         "component": {
-            "Row": {
+            "Column": {
                 "children": {
-                    "explicitList": ["{{ uid }}_img_{{ loop.index }}", "{{ uid }}_info_col_{{ loop.index }}"]
+                    "explicitList": ["{{ uid }}_map_{{ loop.index }}", "{{ uid }}_info_col_{{ loop.index }}"]
                 }
             }
         }
       },
       {
-        "id": "{{ uid }}_img_{{ loop.index }}",
+        "id": "{{ uid }}_map_{{ loop.index }}",
         "component": {
-            "Image": {
-                "url": { "literalString": "{{ r.image }}" },
-                "altText": { "literalString": "{{ r.name }}" }
+            "IFrame": {
+                "url": { "literalString": "https://www.google.com/maps/embed/v1/place?key={{ maps_api_key }}&q={{ r.lat }},{{ r.lng }}&zoom=16" },
+                "height": 250
             }
         }
       },
@@ -53,7 +53,7 @@
         "component": {
             "Column": {
                 "children": {
-                    "explicitList": ["{{ uid }}_name_{{ loop.index }}", "{{ uid }}_cuisine_{{ loop.index }}", "{{ uid }}_btn_{{ loop.index }}"]
+                    "explicitList": ["{{ uid }}_name_{{ loop.index }}", "{{ uid }}_cuisine_{{ loop.index }}", "{{ uid }}_address_{{ loop.index }}"]
                 }
             }
         }
@@ -64,25 +64,11 @@
       },
       {
          "id": "{{ uid }}_cuisine_{{ loop.index }}",
-         "component": { "Text": { "text": { "literalString": "Type: {{ r.cuisine }} • Rating: {{ r.rating }}⭐" }, "usageHint": "body" } }
+         "component": { "Text": { "text": { "literalString": "{{ r.cuisine }}" }, "usageHint": "body" } }
       },
       {
-        "id": "{{ uid }}_btn_txt_{{ loop.index }}",
-        "component": { "Text": { "text": { "literalString": "Book Table" }, "usageHint": "button_label" } }
-      },
-      {
-        "id": "{{ uid }}_btn_{{ loop.index }}",
-        "component": {
-            "Button": {
-                "child": "{{ uid }}_btn_txt_{{ loop.index }}",
-                "action": {
-                    "name": "reserveTable",
-                    "context": [
-                        { "key": "restaurantName", "value": { "literalString": "{{ r.name }}" } }
-                    ]
-                }
-            }
-        }
+         "id": "{{ uid }}_address_{{ loop.index }}",
+         "component": { "Text": { "text": { "literalString": "📍 {{ r.location }}" }, "usageHint": "caption" } }
       }
       {% if not loop.last %},{% endif %}
       {% endfor %}
