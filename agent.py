@@ -226,3 +226,58 @@ class StockService(RestaurantService):
         except Exception as e:
             print(f"Stock Error: {e}")
             return TextResponse(text=f"Error fetching stock data: {e}")
+
+    def get_stock_news(self, symbol: str) -> Union[A2UIResponse, TextResponse]:
+        import yfinance as yf
+        from datetime import datetime
+        
+        print(f"Fetching news for {symbol}")
+        try:
+            ticker = yf.Ticker(symbol)
+            news = ticker.news
+            
+            if not news:
+                return TextResponse(text=f"No news found for {symbol}")
+            
+            # Extract news items (limit to 10)
+            news_list = []
+            for item in news[:10]:
+                # New yfinance API structure: data is inside 'content' object
+                content = item.get('content', item)
+                
+                # Parse publish time (new format uses ISO string 'pubDate')
+                pub_date = content.get('pubDate', '')
+                if pub_date:
+                    try:
+                        from datetime import datetime
+                        dt = datetime.fromisoformat(pub_date.replace('Z', '+00:00'))
+                        date_str = dt.strftime('%Y-%m-%d %H:%M')
+                    except:
+                        date_str = pub_date[:16] if len(pub_date) > 16 else pub_date
+                else:
+                    date_str = ''
+                
+                # Get URL from canonicalUrl or clickThroughUrl
+                canonical = content.get('canonicalUrl', {})
+                click_through = content.get('clickThroughUrl', {})
+                link = canonical.get('url') or click_through.get('url') or '#'
+                
+                # Get publisher from provider
+                provider = content.get('provider', {})
+                publisher = provider.get('displayName', 'Unknown')
+                
+                news_list.append({
+                    'title': content.get('title', 'No title'),
+                    'link': link,
+                    'publisher': publisher,
+                    'date': date_str
+                })
+            
+            return self._render_template("stock_news.json.j2", {
+                "symbol": symbol.upper(),
+                "news_list": news_list
+            })
+            
+        except Exception as e:
+            print(f"News Error: {e}")
+            return TextResponse(text=f"Error fetching news: {e}")

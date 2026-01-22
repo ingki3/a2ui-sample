@@ -245,6 +245,10 @@ async def chat_stream(request: Request, chat_req: ChatRequest):
                     years = int(args.get("years", 0))
                     res = loan_service.calculate_loan(principal, rate, years, is_ui_mode=True)
                 
+                elif tool_name == "get_stock_news":
+                    symbol = args.get("symbol")
+                    res = stock_service.get_stock_news(symbol)
+                
                 # Send A2UI response if available
                 if res and isinstance(res, A2UIResponse):
                     a2ui_data = res.model_dump()

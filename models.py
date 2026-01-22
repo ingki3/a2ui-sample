@@ -12,6 +12,7 @@ class TextContent(BaseModel):
 class TextComponent(ComponentBase):
     usageHint: Optional[str] = None
     text: TextContent
+    url: Optional[TextContent] = None
 
 class TextFieldComponent(ComponentBase):
     label: TextContent
@@ -34,6 +35,7 @@ class ColumnChildren(BaseModel):
 
 class ColumnComponent(ComponentBase):
     children: ColumnChildren
+    style: Optional[str] = None
 
 class ImageComponent(ComponentBase):
     url: TextContent
@@ -41,6 +43,7 @@ class ImageComponent(ComponentBase):
 
 class RowComponent(ComponentBase):
     children: ColumnChildren # Reuse ColumnChildren because structure is same (explicitList)
+    style: Optional[str] = None
 
 class ChartDataPoint(BaseModel):
     time: str

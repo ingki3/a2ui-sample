@@ -46,10 +46,50 @@ function addA2UIWidget(a2uiData) {
             if (!comp) return null;
 
             if (comp.Text) {
-                const el = document.createElement('div');
                 const hint = comp.Text.usageHint || 'body';
-                el.className = `a2ui-text-${hint}`;
-                el.innerText = comp.Text.text.literalString || '';
+                const text = comp.Text.text.literalString || '';
+                const url = comp.Text.url?.literalString;
+
+                let el;
+
+                // Handle news-specific styles
+                if (hint === 'news-title' && url) {
+                    el = document.createElement('a');
+                    el.href = url;
+                    el.target = '_blank';
+                    el.className = 'a2ui-news-title';
+                    el.innerText = text;
+                } else if (hint === 'news-publisher') {
+                    el = document.createElement('span');
+                    el.className = 'a2ui-news-publisher';
+                    el.innerText = text;
+                } else if (hint === 'news-date') {
+                    el = document.createElement('span');
+                    el.className = 'a2ui-news-date';
+                    el.innerText = '• ' + text;
+                } else if (hint === 'news-header-title') {
+                    el = document.createElement('h2');
+                    el.style.margin = '0';
+                    el.style.fontSize = '18px';
+                    el.style.fontWeight = '600';
+                    el.innerText = text;
+                } else if (hint === 'news-header-subtitle') {
+                    el = document.createElement('span');
+                    el.style.fontSize = '12px';
+                    el.style.opacity = '0.9';
+                    el.innerText = text;
+                } else if (hint === 'link' && url) {
+                    el = document.createElement('a');
+                    el.href = url;
+                    el.target = '_blank';
+                    el.className = `a2ui-text-${hint}`;
+                    el.innerText = text;
+                } else {
+                    el = document.createElement('div');
+                    el.className = `a2ui-text-${hint}`;
+                    el.innerText = text;
+                }
+
                 return el;
             } else if (comp.TextField) {
                 const el = document.createElement('div');
@@ -86,7 +126,17 @@ function addA2UIWidget(a2uiData) {
                 return btn;
             } else if (comp.Column) {
                 const col = document.createElement('div');
-                col.className = 'a2ui-column';
+                const style = comp.Column.style || '';
+
+                // Handle news-specific column styles
+                if (style === 'news-card') {
+                    col.className = 'a2ui-news-card';
+                } else if (style === 'news-header') {
+                    col.className = 'a2ui-news-header';
+                } else {
+                    col.className = 'a2ui-column';
+                }
+
                 comp.Column.children.explicitList.forEach(childId => {
                     const childEl = renderComponent(childId);
                     if (childEl) col.appendChild(childEl);
@@ -94,12 +144,18 @@ function addA2UIWidget(a2uiData) {
                 return col;
             } else if (comp.Row) {
                 const row = document.createElement('div');
-                row.className = 'a2ui-row';
-                // Simple flex row style
-                row.style.display = 'flex';
-                row.style.gap = '10px';
-                row.style.alignItems = 'center';
-                row.style.overflowX = 'auto'; // safe for mobile
+                const style = comp.Row.style || '';
+                
+                if (style === 'news-meta') {
+                    row.className = 'a2ui-news-meta';
+                } else {
+                    row.className = 'a2ui-row';
+                    // Simple flex row style
+                    row.style.display = 'flex';
+                    row.style.gap = '10px';
+                    row.style.alignItems = 'center';
+                    row.style.overflowX = 'auto'; // safe for mobile
+                }
 
                 comp.Row.children.explicitList.forEach(childId => {
                     const childEl = renderComponent(childId);

@@ -94,6 +94,20 @@ class LLMWrapper:
                         },
                         "required": ["symbol"]
                     }
+                },
+                {
+                    "name": "get_stock_news",
+                    "description": "Get recent news articles for a given stock symbol.",
+                    "parameters": {
+                        "type": "OBJECT",
+                        "properties": {
+                            "symbol": {
+                                "type": "STRING",
+                                "description": "The stock symbol (e.g. AAPL, GOOG, TSLA)."
+                            }
+                        },
+                        "required": ["symbol"]
+                    }
                 }
             ]
         }
