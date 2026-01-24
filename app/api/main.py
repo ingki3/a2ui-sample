@@ -1,15 +1,17 @@
+import os
 from fastapi import FastAPI, Depends, Request, Body
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from agent import LoanCalculatorService
-from models import A2UIResponse, TextResponse
+from app.services.agent import LoanCalculatorService
+from app.schemas.models import A2UIResponse, TextResponse
 from typing import Union, Dict, Any, Optional
-from llm_wrapper import LLMWrapper
+from app.services.llm_wrapper import LLMWrapper
 
 app = FastAPI()
 
 # Mount static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "static"))
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 agent = LoanCalculatorService()
 llm = LLMWrapper()
@@ -41,7 +43,7 @@ async def chat(request: Request, chat_req: ChatRequest):
         calls = processed["calls"]
         responses = []
         
-        from agent import RestaurantService, StockService, ShoppingService
+        from app.services.agent import RestaurantService, StockService, ShoppingService
         restaurant_service = RestaurantService()
         stock_service = StockService()
         shopping_service = ShoppingService()
@@ -100,7 +102,7 @@ async def chat(request: Request, chat_req: ChatRequest):
                         import uuid
                         commentary_id = f"commentary_{str(uuid.uuid4())[:8]}"
                         
-                        from models import ComponentEntry, ComponentType, TextComponent, TextContent
+                        from app.schemas.models import ComponentEntry, ComponentType, TextComponent, TextContent
                         
                         commentary_comp = ComponentEntry(
                             id=commentary_id,
@@ -133,7 +135,7 @@ async def chat(request: Request, chat_req: ChatRequest):
             return responses[0]
             
         # Dashboard Merge Logic
-        from models import A2UIData, SurfaceUpdate, DataModelUpdate, BeginRendering, ComponentEntry, ComponentType, ColumnComponent, ColumnChildren
+        from app.schemas.models import A2UIData, SurfaceUpdate, DataModelUpdate, BeginRendering, ComponentEntry, ComponentType, ColumnComponent, ColumnChildren
         
         merged_components = []
         merged_data_contents = []
@@ -193,7 +195,7 @@ async def chat(request: Request, chat_req: ChatRequest):
 @app.get("/")
 def read_root():
     from fastapi.responses import FileResponse
-    return FileResponse('static/index.html')
+    return FileResponse(os.path.join(static_dir, 'index.html'))
 
 @app.post("/chat/stream")
 async def chat_stream(request: Request, chat_req: ChatRequest):
@@ -212,7 +214,7 @@ async def chat_stream(request: Request, chat_req: ChatRequest):
         processed = llm.process_query(text)
         
         if processed["type"] == "multiple_tool_calls":
-            from agent import StockService, RestaurantService, LoanCalculatorService, ShoppingService
+            from app.services.agent import StockService, RestaurantService, LoanCalculatorService, ShoppingService
             stock_service = StockService()
             restaurant_service = RestaurantService()
             loan_service = LoanCalculatorService()

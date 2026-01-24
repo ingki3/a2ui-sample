@@ -1,6 +1,6 @@
 import math
 from typing import List, Dict, Any, Union
-from models import (
+from app.schemas.models import (
     A2UIResponse, A2UIData, SurfaceUpdate, ComponentEntry, ComponentType,
     TextComponent, TextContent, TextFieldComponent, ButtonComponent, Action,
     ActionContext, ColumnComponent, ColumnChildren, DataModelUpdate,
@@ -10,6 +10,7 @@ from models import (
 class LoanCalculatorService:
     def calculate_loan(self, principal: float, annual_rate: float, years: int, is_ui_mode: bool = False) -> Union[A2UIResponse, TextResponse]:
         print(f"Calculating loan: ${principal}, {annual_rate}% APR, {years} years")
+
 
         # Loan calculation
         monthly_rate = annual_rate / 100 / 12
@@ -28,6 +29,7 @@ class LoanCalculatorService:
             return TextResponse(text=f"Monthly Payment: ${monthly_payment:.2f}, Total Interest: ${total_interest:.2f}")
 
     def create_loan_result_ui(self, principal, rate, years, monthly, total, interest) -> A2UIResponse:
+        print("create_loan_result_ui called.") # Added for debugging
         from jinja2 import Environment, FileSystemLoader
         import json
         import os
@@ -37,7 +39,8 @@ class LoanCalculatorService:
         uid = str(uuid.uuid4())[:8]
         
         # Note: In a real app, Environment should be created once at module level or dependency injected
-        env = Environment(loader=FileSystemLoader("templates"))
+        prompts_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "prompts"))
+        env = Environment(loader=FileSystemLoader(prompts_dir))
         template = env.get_template("loan_result.json.j2")
         
         # Render template with variables
@@ -175,12 +178,14 @@ class RestaurantService:
         from jinja2 import Environment, FileSystemLoader
         import json
         import uuid
+        import os
         
         # Generate a short random UID if not provided to ensure namespacing
         if not uid:
              uid = str(uuid.uuid4())[:8]
 
-        env = Environment(loader=FileSystemLoader("templates"))
+        prompts_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "prompts"))
+        env = Environment(loader=FileSystemLoader(prompts_dir))
         template = env.get_template(template_name)
         
         # Inject uid into context

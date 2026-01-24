@@ -1,4 +1,7 @@
-from llm_wrapper import LLMWrapper
+import sys
+import os
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from app.services.llm_wrapper import LLMWrapper
 
 def test_restaurant_finder():
     llm = LLMWrapper()
