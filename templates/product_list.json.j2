@@ -1,0 +1,102 @@
+{
+  "surfaceUpdate": {
+    "surfaceId": "product_list",
+    "components": [
+      {
+        "id": "{{ uid }}_root",
+        "component": {
+          "Column": {
+            "children": {
+              "explicitList": [
+                "{{ uid }}_title",
+                "{{ uid }}_result_count",
+                {% for batch in items|batch(2) %}
+                "{{ uid }}_row_{{ loop.index }}"
+                {% if not loop.last %},{% endif %}
+                {% endfor %}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_title",
+        "component": { "Text": { "text": { "literalString": "🛒 Products for '{{ query }}'" }, "usageHint": "h2" } }
+      },
+      {
+        "id": "{{ uid }}_result_count",
+        "component": { "Text": { "text": { "literalString": "Found {{ items|length }} products." }, "usageHint": "caption" } }
+      },
+      
+      {% for batch in items|batch(2) %}
+      {% set row_loop = loop %}
+      {
+        "id": "{{ uid }}_row_{{ row_loop.index }}",
+        "component": {
+          "Row": {
+            "children": {
+              "explicitList": [
+                {% for item in batch %}
+                "{{ uid }}_item_col_{{ row_loop.index }}_{{ loop.index }}"
+                {% if not loop.last %},{% endif %}
+                {% endfor %}
+              ]
+            },
+            "style": "product-row"
+          }
+        }
+      },
+      {% for item in batch %}
+      {
+        "id": "{{ uid }}_item_col_{{ row_loop.index }}_{{ loop.index }}",
+        "component": {
+            "Column": {
+                "children": {
+                    "explicitList": ["{{ uid }}_image_{{ row_loop.index }}_{{ loop.index }}", "{{ uid }}_name_{{ row_loop.index }}_{{ loop.index }}", "{{ uid }}_price_{{ row_loop.index }}_{{ loop.index }}", "{{ uid }}_mall_{{ row_loop.index }}_{{ loop.index }}"]
+                },
+                "style": "product-card"
+            }
+        }
+      },
+      {
+        "id": "{{ uid }}_image_{{ row_loop.index }}_{{ loop.index }}",
+        "component": {
+            "Image": {
+                "url": { "literalString": "{{ item.image }}" },
+                "altText": { "literalString": "{{ item.title }}" }
+            }
+        }
+      },
+      {
+        "id": "{{ uid }}_name_{{ row_loop.index }}_{{ loop.index }}",
+        "component": { 
+            "Text": { 
+                "text": { "literalString": "{{ item.title }}" }, 
+                "usageHint": "link",
+                "url": { "literalString": "{{ item.link }}" }
+            } 
+        }
+      },
+      {
+         "id": "{{ uid }}_price_{{ row_loop.index }}_{{ loop.index }}",
+         "component": { "Text": { "text": { "literalString": "₩{{ item.lprice }}" }, "usageHint": "h3" } }
+      },
+      {
+         "id": "{{ uid }}_mall_{{ row_loop.index }}_{{ loop.index }}",
+         "component": { "Text": { "text": { "literalString": "at {{ item.mallName }}" }, "usageHint": "caption" } }
+      }
+      {% if not loop.last %},{% endif %}
+      {% endfor %}
+      {% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]
+  },
+  "dataModelUpdate": {
+    "surfaceId": "product_list",
+    "contents": []
+  },
+  "beginRendering": {
+    "surfaceId": "product_list",
+    "root": "{{ uid }}_root"
+  }
+}

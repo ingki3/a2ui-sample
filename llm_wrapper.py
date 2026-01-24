@@ -108,6 +108,20 @@ class LLMWrapper:
                         },
                         "required": ["symbol"]
                     }
+                },
+                {
+                    "name": "search_products",
+                    "description": "Search for products using Naver Shopping API. Use this when the user asks to find, search for, or buy products (e.g. 'search for bags', 'find me a laptop').",
+                    "parameters": {
+                        "type": "OBJECT",
+                        "properties": {
+                            "query": {
+                                "type": "STRING",
+                                "description": "The product search query (e.g. 'slacks', 'gaming mouse')."
+                            }
+                        },
+                        "required": ["query"]
+                    }
                 }
             ]
         }

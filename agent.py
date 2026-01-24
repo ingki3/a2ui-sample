@@ -227,6 +227,7 @@ class StockService(RestaurantService):
             print(f"Stock Error: {e}")
             return TextResponse(text=f"Error fetching stock data: {e}")
 
+    
     def get_stock_news(self, symbol: str) -> Union[A2UIResponse, TextResponse]:
         import yfinance as yf
         from datetime import datetime
@@ -281,3 +282,69 @@ class StockService(RestaurantService):
         except Exception as e:
             print(f"News Error: {e}")
             return TextResponse(text=f"Error fetching news: {e}")
+
+class ShoppingService(RestaurantService):
+    def search_products(self, query: str) -> Union[A2UIResponse, TextResponse]:
+        import httpx
+        import xml.etree.ElementTree as ET
+        from urllib.parse import quote
+        import os
+        
+        print(f"Searching products for {query}")
+        
+        # Prefer env vars, fallback to class constants if empty (for backward compat)
+        client_id = os.environ.get("NAVER_CLIENT_ID", self.NAVER_CLIENT_ID)
+        client_secret = os.environ.get("NAVER_CLIENT_SECRET", self.NAVER_CLIENT_SECRET)
+        
+        url = f"https://openapi.naver.com/v1/search/shop.xml?query={quote(query)}&display=10&start=1&sort=sim"
+        
+        headers = {
+            "X-Naver-Client-Id": client_id,
+            "X-Naver-Client-Secret": client_secret
+        }
+        
+        try:
+            response = httpx.get(url, headers=headers, timeout=10.0)
+            response.raise_for_status()
+            
+            # Parse XML
+            root = ET.fromstring(response.text)
+            channel = root.find("channel")
+            
+            items = []
+            if channel:
+                for item in channel.findall("item"):
+                    # Clean tags
+                    title = item.find("title").text or ""
+                    title = title.replace("<b>", "").replace("</b>", "")
+                    
+                    link = item.find("link").text or "#"
+                    image = item.find("image").text or ""
+                    mall_name = item.find("mallName").text or "Unknown Store"
+                    lprice = item.find("lprice").text or "0"
+                    
+                    # Format price with commas
+                    try:
+                        lprice_fmt = f"{int(lprice):,}"
+                    except:
+                        lprice_fmt = lprice
+                    
+                    items.append({
+                        "title": title,
+                        "link": link,
+                        "image": image,
+                        "mallName": mall_name,
+                        "lprice": lprice_fmt
+                    })
+            
+            if not items:
+                return TextResponse(text=f"No products found for '{query}'")
+                
+            return self._render_template("product_list.json.j2", {
+                "query": query,
+                "items": items
+            })
+            
+        except Exception as e:
+            print(f"Shopping API Error: {e}")
+            return TextResponse(text=f"Error searching products: {e}")

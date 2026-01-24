@@ -78,6 +78,22 @@ function addA2UIWidget(a2uiData) {
                     el.style.fontSize = '12px';
                     el.style.opacity = '0.9';
                     el.innerText = text;
+                } else if (hint === 'h2') {
+                    el = document.createElement('h2');
+                    el.className = 'a2ui-news-title'; // Reuse news title style
+                    el.style.fontSize = '18px';
+                    el.style.fontWeight = 'bold';
+                    el.innerText = text;
+                } else if (hint === 'h3') {
+                    el = document.createElement('div');
+                    el.style.fontSize = '16px';
+                    el.style.fontWeight = 'bold';
+                    el.style.color = '#d32f2f'; // Red for price
+                    el.innerText = text;
+                } else if (hint === 'caption') {
+                    el = document.createElement('div');
+                    el.className = 'a2ui-news-date'; // Reuse gray text
+                    el.innerText = text;
                 } else if (hint === 'link' && url) {
                     el = document.createElement('a');
                     el.href = url;
@@ -129,7 +145,8 @@ function addA2UIWidget(a2uiData) {
                 const style = comp.Column.style || '';
 
                 // Handle news-specific column styles
-                if (style === 'news-card') {
+                // Handle news-specific column styles
+                if (style === 'news-card' || style === 'product-card') {
                     col.className = 'a2ui-news-card';
                 } else if (style === 'news-header') {
                     col.className = 'a2ui-news-header';
@@ -145,9 +162,14 @@ function addA2UIWidget(a2uiData) {
             } else if (comp.Row) {
                 const row = document.createElement('div');
                 const style = comp.Row.style || '';
-                
+
                 if (style === 'news-meta') {
                     row.className = 'a2ui-news-meta';
+                } else if (style === 'product-row') {
+                    row.className = 'a2ui-row';
+                    row.style.display = 'flex';
+                    row.style.gap = '10px';
+                    row.style.width = '100%';
                 } else {
                     row.className = 'a2ui-row';
                     // Simple flex row style
@@ -159,7 +181,13 @@ function addA2UIWidget(a2uiData) {
 
                 comp.Row.children.explicitList.forEach(childId => {
                     const childEl = renderComponent(childId);
-                    if (childEl) row.appendChild(childEl);
+                    if (childEl) {
+                        if (style === 'product-row') {
+                            childEl.style.flex = '1';
+                            childEl.style.minWidth = '0'; // Prevent overflow
+                        }
+                        row.appendChild(childEl);
+                    }
                 });
                 return row;
             } else if (comp.Image) {

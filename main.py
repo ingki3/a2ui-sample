@@ -41,9 +41,10 @@ async def chat(request: Request, chat_req: ChatRequest):
         calls = processed["calls"]
         responses = []
         
-        from agent import RestaurantService, StockService
+        from agent import RestaurantService, StockService, ShoppingService
         restaurant_service = RestaurantService()
         stock_service = StockService()
+        shopping_service = ShoppingService()
         
         for call in calls:
             tool_name = call["tool_name"]
@@ -66,6 +67,16 @@ async def chat(request: Request, chat_req: ChatRequest):
                 date = args.get("date")
                 guests = int(args.get("guests", 2))
                 res = restaurant_service.reserve_table(r_name, date, guests)
+
+            elif tool_name == "reserve_table":
+                r_name = args.get("restaurant_name")
+                date = args.get("date")
+                guests = int(args.get("guests", 2))
+                res = restaurant_service.reserve_table(r_name, date, guests)
+
+            elif tool_name == "search_products":
+                query = args.get("query")
+                res = shopping_service.search_products(query)
 
             elif tool_name == "get_stock_chart":
                 symbol = args.get("symbol")
@@ -201,10 +212,11 @@ async def chat_stream(request: Request, chat_req: ChatRequest):
         processed = llm.process_query(text)
         
         if processed["type"] == "multiple_tool_calls":
-            from agent import StockService, RestaurantService, LoanCalculatorService
+            from agent import StockService, RestaurantService, LoanCalculatorService, ShoppingService
             stock_service = StockService()
             restaurant_service = RestaurantService()
             loan_service = LoanCalculatorService()
+            shopping_service = ShoppingService()
             
             for call in processed["calls"]:
                 tool_name = call["tool_name"]
@@ -248,6 +260,14 @@ async def chat_stream(request: Request, chat_req: ChatRequest):
                 elif tool_name == "get_stock_news":
                     symbol = args.get("symbol")
                     res = stock_service.get_stock_news(symbol)
+                
+                elif tool_name == "get_stock_news":
+                    symbol = args.get("symbol")
+                    res = stock_service.get_stock_news(symbol)
+
+                elif tool_name == "search_products":
+                    query = args.get("query")
+                    res = shopping_service.search_products(query)
                 
                 # Send A2UI response if available
                 if res and isinstance(res, A2UIResponse):
