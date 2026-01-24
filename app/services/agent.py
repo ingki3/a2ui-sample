@@ -39,7 +39,7 @@ class LoanCalculatorService:
         uid = str(uuid.uuid4())[:8]
         
         # Note: In a real app, Environment should be created once at module level or dependency injected
-        prompts_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "prompts"))
+        prompts_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "templates"))
         env = Environment(loader=FileSystemLoader(prompts_dir))
         template = env.get_template("loan_result.json.j2")
         
@@ -184,7 +184,7 @@ class RestaurantService:
         if not uid:
              uid = str(uuid.uuid4())[:8]
 
-        prompts_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "prompts"))
+        prompts_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "templates"))
         env = Environment(loader=FileSystemLoader(prompts_dir))
         template = env.get_template(template_name)
         
