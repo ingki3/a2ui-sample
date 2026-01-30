@@ -1,0 +1,101 @@
+{
+  "surfaceUpdate": {
+    "surfaceId": "stock_fundamentals",
+    "components": [
+      {
+        "id": "{{ uid }}_root",
+        "component": {
+          "Column": {
+            "children": {
+              "explicitList": [
+                "{{ uid }}_header",
+                "{{ uid }}_fin_title",
+                "{{ uid }}_fin_table",
+                "{{ uid }}_hold_title",
+                "{{ uid }}_hold_row",
+                "{{ uid }}_rec_title",
+                "{{ uid }}_rec_chart"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_header",
+        "component": { "Text": { "text": { "literalString": "📊 Fundamentals: {{ symbol }}" }, "usageHint": "h2" } }
+      },
+
+      {
+        "id": "{{ uid }}_fin_title",
+        "component": { "Text": { "text": { "literalString": "💰 Financial Performance (Last 4 Years)" }, "usageHint": "h3" } }
+      },
+      {
+        "id": "{{ uid }}_fin_table",
+        "component": {
+            "Column": {
+                "children": {
+                    "explicitList": [
+                        {% for item in financials %}
+                        "{{ uid }}_fin_row_{{ loop.index }}"
+                        {% if not loop.last %},{% endif %}
+                        {% endfor %}
+                    ]
+                }
+            }
+        }
+      },
+      {% for item in financials %}
+      {
+        "id": "{{ uid }}_fin_row_{{ loop.index }}",
+        "component": { "Text": { "text": { "literalString": "{{ item.year }}: Revenue {{ item.revenue }} | Net Income {{ item.net_income }}" }, "usageHint": "body" } }
+      },
+      {% endfor %}
+
+
+      {
+        "id": "{{ uid }}_hold_title",
+        "component": { "Text": { "text": { "literalString": "👥 Shareholder Structure" }, "usageHint": "h3" } }
+      },
+      {
+        "id": "{{ uid }}_hold_row",
+        "component": { "Text": { "text": { "literalString": "• Insiders: {{ holders.insiders }}\n• Institutions: {{ holders.institutions }}" }, "usageHint": "body" } }
+      },
+
+      {
+        "id": "{{ uid }}_rec_title",
+        "component": { "Text": { "text": { "literalString": "⭐ Analyst Ratings (Current Month)" }, "usageHint": "h3" } }
+      },
+      {
+        "id": "{{ uid }}_rec_chart",
+        "component": {
+            "Column": {
+                "children": {
+                    "explicitList": [
+                        {% for rec in recommendations %}
+                        "{{ uid }}_rec_item_{{ loop.index }}"
+                        {% if not loop.last %},{% endif %}
+                        {% endfor %}
+                    ]
+                }
+            }
+        }
+      },
+      {% for rec in recommendations %}
+      {
+        "id": "{{ uid }}_rec_item_{{ loop.index }}",
+        "component": { "Text": { "text": { "literalString": "{{ rec.label }}: {{ rec.count }}" }, "usageHint": "body" } }
+      }
+      {% if not loop.last %},{% endif %}
+      {% endfor %}
+
+    ]
+  },
+  "dataModelUpdate": {
+    "surfaceId": "stock_fundamentals",
+    "contents": []
+  },
+  "beginRendering": {
+    "surfaceId": "stock_fundamentals",
+    "root": "{{ uid }}_root"
+  }
+}

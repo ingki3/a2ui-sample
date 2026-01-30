@@ -1,5 +1,5 @@
 import math
-from typing import List, Dict, Any, Union
+from typing import List, Dict, Any, Union, Tuple
 from app.schemas.models import (
     A2UIResponse, A2UIData, SurfaceUpdate, ComponentEntry, ComponentType,
     TextComponent, TextContent, TextFieldComponent, ButtonComponent, Action,
@@ -24,9 +24,10 @@ class LoanCalculatorService:
         total_interest = total_payment - principal
 
         if is_ui_mode:
-            return self.create_loan_result_ui(principal, annual_rate, years, monthly_payment, total_payment, total_interest)
+            context = f"Loan Calculation: Principal ${principal}, Rate {annual_rate}%, {years} Years. Monthly: ${monthly_payment:.2f}. Total Interest: ${total_interest:.2f}."
+            return self.create_loan_result_ui(principal, annual_rate, years, monthly_payment, total_payment, total_interest), context
         else:
-            return TextResponse(text=f"Monthly Payment: ${monthly_payment:.2f}, Total Interest: ${total_interest:.2f}")
+            return TextResponse(text=f"Monthly Payment: ${monthly_payment:.2f}, Total Interest: ${total_interest:.2f}"), f"Loan calculated: Monthly ${monthly_payment:.2f}."
 
     def create_loan_result_ui(self, principal, rate, years, monthly, total, interest) -> A2UIResponse:
         print("create_loan_result_ui called.") # Added for debugging
@@ -112,10 +113,10 @@ class RestaurantService:
                 lng = float(mapx) / 10000000 if len(mapx) > 6 else float(mapx)
                 lat = float(mapy) / 10000000 if len(mapy) > 6 else float(mapy)
                 
-                restaurants.append({
+                places.append({
                     "id": f"naver_{idx}",
                     "name": title,
-                    "cuisine": category.split(">")[-1] if ">" in category else category,
+                    "category": category.split(">")[-1] if ">" in category else category,
                     "rating": 4.5,  # Naver API doesn't provide ratings
                     "location": road_address or address,
                     "address": address,
@@ -125,31 +126,33 @@ class RestaurantService:
                     "map_url": f"https://www.google.com/maps?q={lat},{lng}"
                 })
             
-            return restaurants
+            return places
             
         except Exception as e:
             print(f"Naver API Error: {e}")
             return []
     
-    def find_restaurants(self, location: str, cuisine: str = None) -> Union[A2UIResponse, TextResponse]:
-        print(f"Finding {cuisine or 'any'} restaurants in {location}")
+    def find_places(self, location: str, keyword: str = None) -> Union[A2UIResponse, TextResponse]:
+        print(f"Finding {keyword or 'places'} in {location}")
         
         # Build search query
         query = f"{location} 맛집"
-        if cuisine:
-            query = f"{location} {cuisine}"
+        if keyword:
+            query = f"{location} {keyword}"
+        else:
+            query = f"{location} 가볼만한곳"
         
         # Call Naver API
-        restaurants = self._search_naver_local(query, display=5)
+        places = self._search_naver_local(query, display=5)
         
-        if not restaurants:
+        if not places:
             print("No results from Naver API, using fallback mock data")
             # Fallback to mock data
-            restaurants = [
+            places = [
                 {
-                    "id": "r1",
-                    "name": "Seoul Kitchen",
-                    "cuisine": "Korean",
+                    "id": "p1",
+                    "name": "Seoul Hospital",
+                    "category": "Hospital",
                     "rating": 4.8,
                     "location": location,
                     "lat": 37.5665,
@@ -159,20 +162,22 @@ class RestaurantService:
             ]
 
         import os
+        context = f"Found {len(places)} places in {location} for keyword '{keyword}'. Top results: " + ", ".join([p['name'] for p in places[:3]])
         maps_api_key = os.environ.get("GOOGLE_MAPS_API_KEY", "")
-        return self._render_template("restaurant_list.json.j2", {
-            "restaurants": restaurants, 
+        return self._render_template("place_list.json.j2", {
+            "places": places, 
             "location": location,
+            "keyword": keyword,
             "maps_api_key": maps_api_key
-        })
+        }), context
 
     def reserve_table(self, restaurant_name: str, date: str, guests: int) -> Union[A2UIResponse, TextResponse]:
-        print(f"Reserving {restaurant_name} for {guests} on {date}")
+        context = f"Reservation confirmed at {restaurant_name} for {guests} guests on {date}."
         return self._render_template("reservation_confirmed.json.j2", {
             "restaurant_name": restaurant_name,
             "date": date,
             "guests": guests
-        })
+        }), context
     
     def _render_template(self, template_name: str, context: Dict[str, Any], uid: str = None) -> A2UIResponse:
         from jinja2 import Environment, FileSystemLoader
@@ -222,15 +227,16 @@ class StockService(RestaurantService):
                     "value": float(row['Close'])
                 })
 
+            context = f"Showing stock chart for {symbol}. Current price is ${hist['Close'].iloc[-1]:.2f}."
             return self._render_template("stock_chart.json.j2", {
                 "symbol": symbol.upper(),
                 "prices": prices, # List of {time, value}
                 "current_price": f"${hist['Close'].iloc[-1]:.2f}"
-            })
+            }), context
             
         except Exception as e:
             print(f"Stock Error: {e}")
-            return TextResponse(text=f"Error fetching stock data: {e}")
+            return TextResponse(text=f"Error fetching stock data: {e}"), f"Error fetching stock chart for {symbol}: {e}"
 
     
     def get_stock_news(self, symbol: str) -> Union[A2UIResponse, TextResponse]:
@@ -279,14 +285,218 @@ class StockService(RestaurantService):
                     'date': date_str
                 })
             
+            context = f"Found {len(news_list)} recent news items for {symbol}. Top stories: " + ", ".join([n['title'] for n in news_list[:3]])
             return self._render_template("stock_news.json.j2", {
                 "symbol": symbol.upper(),
                 "news_list": news_list
-            })
+            }), context
             
         except Exception as e:
             print(f"News Error: {e}")
-            return TextResponse(text=f"Error fetching news: {e}")
+            return TextResponse(text=f"Error fetching news: {e}"), f"Error fetching news for {symbol}: {e}"
+
+    def get_stock_info(self, symbol: str) -> Union[A2UIResponse, TextResponse]:
+        import yfinance as yf
+        
+        print(f"Fetching stock info for {symbol}")
+        try:
+            ticker = yf.Ticker(symbol)
+            info = ticker.info
+            
+            # Extract key data with fallbacks
+            profile = {
+                "name": info.get("longName", symbol.upper()),
+                "sector": info.get("sector", "N/A"),
+                "industry": info.get("industry", "N/A"),
+                "summary": info.get("longBusinessSummary", "No summary available."),
+                "website": info.get("website", "#")
+            }
+            
+            # Truncate summary if too long
+            if len(profile["summary"]) > 300:
+                profile["summary"] = profile["summary"][:297] + "..."
+                
+            financials = {
+                "marketCap": info.get("marketCap", "N/A"),
+                "trailingPE": info.get("trailingPE", "N/A"),
+                "dividendYield": info.get("dividendYield", "N/A"),
+                "fiftyTwoWeekHigh": info.get("fiftyTwoWeekHigh", "N/A"),
+                "fiftyTwoWeekLow": info.get("fiftyTwoWeekLow", "N/A"),
+                "targetMeanPrice": info.get("targetMeanPrice", "N/A"),
+                "recommendationKey": info.get("recommendationKey", "N/A").replace("_", " ").title()
+            }
+            
+            # Format large numbers
+            if isinstance(financials["marketCap"], (int, float)):
+                financials["marketCap"] = f"${financials['marketCap'] / 1e9:.2f}B"
+                
+            if isinstance(financials["dividendYield"], (int, float)):
+                financials["dividendYield"] = f"{financials['dividendYield'] * 100:.2f}%"
+                
+            context = f"Company Profile for {symbol}: {profile['name']} ({profile['sector']}). Summary: {profile['summary'][:100]}... Key Stats: Market Cap {financials['marketCap']}, P/E {financials['trailingPE']}."
+            return self._render_template("stock_info.json.j2", {
+                "symbol": symbol.upper(),
+                "profile": profile,
+                "financials": financials
+            }), context
+            
+        except Exception as e:
+            print(f"Stock Info Error: {e}")
+            return TextResponse(text=f"Error fetching stock info: {e}"), f"Error fetching profile for {symbol}: {e}"
+
+    def get_technical_indicators(self, symbol: str) -> Union[A2UIResponse, TextResponse]:
+        import yfinance as yf
+        import pandas as pd
+        import numpy as np
+        
+        print(f"Calculating technical indicators for {symbol}")
+        try:
+            ticker = yf.Ticker(symbol)
+            # Fetch 6 months of data to ensure enough for MACD/RSI
+            hist = ticker.history(period="6mo")
+            
+            if hist.empty:
+                return TextResponse(text=f"No historical data found for {symbol}")
+            
+            # Close prices
+            close = hist['Close']
+            
+            # --- RSI (14) Calculation ---
+            delta = close.diff()
+            gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+            loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+            
+            rs = gain / loss
+            rsi = 100 - (100 / (1 + rs))
+            current_rsi = rsi.iloc[-1]
+            
+            rsi_signal = "Neutral"
+            if current_rsi > 70:
+                rsi_signal = "Overbought (Sell Warning)"
+            elif current_rsi < 30:
+                rsi_signal = "Oversold (Buy Opportunity)"
+                
+            # --- MACD (12, 26, 9) Calculation ---
+            exp1 = close.ewm(span=12, adjust=False).mean()
+            exp2 = close.ewm(span=26, adjust=False).mean()
+            macd_line = exp1 - exp2
+            signal_line = macd_line.ewm(span=9, adjust=False).mean()
+            histogram = macd_line - signal_line
+            
+            current_macd = macd_line.iloc[-1]
+            current_signal = signal_line.iloc[-1]
+            current_hist = histogram.iloc[-1]
+            
+            macd_signal = "Neutral"
+            if current_hist > 0 and histogram.iloc[-2] <= 0:
+                macd_signal = "Bullish Crossover (Buy)"
+            elif current_hist < 0 and histogram.iloc[-2] >= 0:
+                macd_signal = "Bearish Crossover (Sell)"
+            elif current_macd > current_signal:
+                macd_signal = "Bullish Trend"
+            elif current_macd < current_signal:
+                macd_signal = "Bearish Trend"
+            
+            context = f"Technical Indicators for {symbol}: RSI is {current_rsi:.1f} ({rsi_signal}). MACD is {current_macd:.2f} ({macd_signal}). Price: ${close.iloc[-1]:.2f}."
+            return self._render_template("stock_indicators.json.j2", {
+                "symbol": symbol.upper(),
+                "rsi": {
+                    "value": f"{current_rsi:.1f}",
+                    "signal": rsi_signal,
+                    "color": "#ef4444" if current_rsi > 70 else ("#22c55e" if current_rsi < 30 else "#eab308")
+                },
+                "macd": {
+                    "line": f"{current_macd:.2f}",
+                    "signal_line": f"{current_signal:.2f}",
+                    "histogram": f"{current_hist:.2f}",
+                    "signal": macd_signal,
+                    "color": "#22c55e" if current_macd > current_signal else "#ef4444"
+                },
+                "price": f"${close.iloc[-1]:.2f}",
+                "date": hist.index[-1].strftime("%Y-%m-%d")
+            }), context
+            
+        except Exception as e:
+            print(f"Technical Indicator Error: {e}")
+            return TextResponse(text=f"Error calculating indicators: {e}"), f"Error calculating technical indicators for {symbol}: {e}"
+
+    def get_company_fundamentals(self, symbol: str) -> Union[A2UIResponse, TextResponse]:
+        import yfinance as yf
+        import pandas as pd
+        
+        print(f"Fetching fundamentals for {symbol}")
+        try:
+            ticker = yf.Ticker(symbol)
+            
+            # 1. Financials (Income Statement) - Last 4 years
+            financials_data = []
+            try:
+                fin = ticker.financials
+                if not fin.empty:
+                    # Get Total Revenue and Net Income
+                    # Transpose to iterate by date (columns)
+                    # Take last 4 columns (years)
+                    recent_fin = fin.loc[['Total Revenue', 'Net Income']].T.head(4)
+                    
+                    for date, row in recent_fin.iterrows():
+                        financials_data.append({
+                            "year": date.strftime("%Y"),
+                            "revenue": f"${row['Total Revenue'] / 1e9:.1f}B",
+                            "net_income": f"${row['Net Income'] / 1e9:.1f}B"
+                        })
+            except Exception as e:
+                print(f"Financials Error: {e}")
+
+            # 2. Major Holders
+            holders_data = {"insiders": "N/A", "institutions": "N/A"}
+            try:
+                holders = ticker.major_holders
+                # yfinance major_holders can be a DataFrame or dict depending on version/data
+                # Typically it matches output from research script:
+                # 0: 0.17% % of Shares Held by All Insider
+                # 1: 64.82% % of Shares Held by Institutions
+                # But recent output showed 'insidersPercentHeld', 'institutionsPercentHeld' in columns/index
+                if holders is not None:
+                     # Attempt to find specific keys/values based on research output structure
+                     # Output was: breakdown by index/value
+                     if 'Value' in holders.columns: # If dataframe
+                         if 'insidersPercentHeld' in holders.index:
+                             val = holders.loc['insidersPercentHeld', 'Value']
+                             holders_data['insiders'] = f"{val * 100:.1f}%"
+                         if 'institutionsPercentHeld' in holders.index:
+                             val = holders.loc['institutionsPercentHeld', 'Value']
+                             holders_data['institutions'] = f"{val * 100:.1f}%"
+            except Exception as e:
+                print(f"Holders Error: {e}")
+
+            # 3. Recommendations
+            recommendations_data = []
+            try:
+                recs = ticker.recommendations_summary
+                if recs is not None and not recs.empty:
+                    # Take the most recent period (period='0m')
+                    latest = recs.iloc[0]
+                    recommendations_data = [
+                        {"label": "Strong Buy", "count": int(latest['strongBuy'])},
+                        {"label": "Buy", "count": int(latest['buy'])},
+                        {"label": "Hold", "count": int(latest['hold'])},
+                        {"label": "Sell", "count": int(latest['sell'])},
+                        {"label": "Strong Sell", "count": int(latest['strongSell'])}
+                    ]
+            except Exception as e:
+                 print(f"Recs Error: {e}")
+
+            context = f"Fundamentals for {symbol}: Financials (Last 4Y Revenue/NetIncome): {financials_data}. Recommendations: {recommendations_data}. Major Holders: {holders_data}."
+            return self._render_template("stock_fundamentals.json.j2", {
+                "symbol": symbol.upper(),
+                "financials": financials_data,
+                "holders": holders_data,
+                "recommendations": recommendations_data
+            }), context
+            
+        except Exception as e:
+            print(f"Fundamentals Error: {e}")
+            return TextResponse(text=f"Error fetching fundamentals: {e}"), f"Error fetching fundamentals for {symbol}: {e}"
 
 class ShoppingService(RestaurantService):
     def search_products(self, query: str) -> Union[A2UIResponse, TextResponse]:
@@ -343,13 +553,14 @@ class ShoppingService(RestaurantService):
                     })
             
             if not items:
-                return TextResponse(text=f"No products found for '{query}'")
+                return TextResponse(text=f"No products found for '{query}'"), f"No products found for {query}."
                 
+            context = f"Found {len(items)} products for '{query}'. Top items: " + ", ".join([i['title'] for i in items[:3]])
             return self._render_template("product_list.json.j2", {
                 "query": query,
                 "items": items
-            })
+            }), context
             
         except Exception as e:
             print(f"Shopping API Error: {e}")
-            return TextResponse(text=f"Error searching products: {e}")
+            return TextResponse(text=f"Error searching products: {e}"), f"Error searching products: {e}"

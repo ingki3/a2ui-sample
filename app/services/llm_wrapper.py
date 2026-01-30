@@ -42,8 +42,8 @@ class LLMWrapper:
                     }
                 },
                 {
-                    "name": "find_restaurants",
-                    "description": "Find restaurants based on location and cuisine. Use this tool when the user asks to find a place to eat.",
+                    "name": "find_places",
+                    "description": "Find places (restaurants, cafes, hospitals, banks, schools, etc.) based on location and keyword. Use this tool when the user asks to find a place.",
                     "parameters": {
                         "type": "OBJECT",
                         "properties": {
@@ -51,9 +51,9 @@ class LLMWrapper:
                                 "type": "STRING",
                                 "description": "The city or area to search in (e.g. Seoul, Gangnam)."
                             },
-                            "cuisine": {
+                            "keyword": {
                                 "type": "STRING",
-                                "description": "Key cuisine type (e.g. Italian, Korean, Sushi). Optional."
+                                "description": "The type of place or specific keyword (e.g. restaurant, Italian, hospital, pharmacy, ATM). Optional."
                             }
                         },
                         "required": ["location"]
@@ -110,6 +110,48 @@ class LLMWrapper:
                     }
                 },
                 {
+                    "name": "get_stock_info",
+                    "description": "Get company profile, key financials, and analyst recommendations for a given stock symbol. Use this when the user asks for stock info, analysis, or profile.",
+                    "parameters": {
+                        "type": "OBJECT",
+                        "properties": {
+                            "symbol": {
+                                "type": "STRING",
+                                "description": "The stock symbol (e.g. AAPL, GOOG, TSLA)."
+                            }
+                        },
+                        "required": ["symbol"]
+                    }
+                },
+                {
+                    "name": "get_technical_indicators",
+                    "description": "Calculate and analyze technical indicators (RSI, MACD) for a given stock symbol.",
+                    "parameters": {
+                        "type": "OBJECT",
+                        "properties": {
+                            "symbol": {
+                                "type": "STRING",
+                                "description": "The stock symbol (e.g. AAPL, GOOG, TSLA)."
+                            }
+                        },
+                        "required": ["symbol"]
+                    }
+                },
+                {
+                    "name": "get_company_fundamentals",
+                    "description": "Get detailed fundamental analysis including financial history (revenue, net income), shareholder structure, and analyst ratings.",
+                    "parameters": {
+                        "type": "OBJECT",
+                        "properties": {
+                            "symbol": {
+                                "type": "STRING",
+                                "description": "The stock symbol (e.g. AAPL, GOOG, TSLA)."
+                            }
+                        },
+                        "required": ["symbol"]
+                    }
+                },
+                {
                     "name": "search_products",
                     "description": "Search for products using Naver Shopping API. Use this when the user asks to find, search for, or buy products (e.g. 'search for bags', 'find me a laptop').",
                     "parameters": {
@@ -127,7 +169,7 @@ class LLMWrapper:
         }
         
         self.model = genai.GenerativeModel(
-            model_name='gemini-2.0-flash',
+            model_name='gemini-3-flash-preview',
             tools=[auth_tool],
             system_instruction="""You are a helpful assistant that uses tools to fulfill user requests.
 
@@ -189,7 +231,7 @@ IMPORTANT RULES:
         """
         try:
             # Use a simple model without tools for commentary generation
-            commentary_model = genai.GenerativeModel(model_name='gemini-2.0-flash')
+            commentary_model = genai.GenerativeModel(model_name='gemini-3-flash-preview')
             
             prompt = f"""You are a helpful financial analyst assistant. Provide a brief, informative commentary about the stock {symbol}.
 Current price: ${current_price:.2f}
@@ -214,7 +256,7 @@ Example format: "[Company name]는 [brief description]. 현재 가격은 [price 
         Stream AI commentary about a stock, yielding text chunks.
         """
         try:
-            commentary_model = genai.GenerativeModel(model_name='gemini-2.0-flash')
+            commentary_model = genai.GenerativeModel(model_name='gemini-3-flash-preview')
             
             prompt = f"""You are a helpful financial analyst assistant. Provide a brief, informative commentary about the stock {symbol}.
 Current price: ${current_price:.2f}
@@ -236,5 +278,33 @@ Example format: "[Company name]는 [brief description]. 현재 가격은 [price 
         except Exception as e:
             print(f"Streaming commentary error: {e}")
             yield f"(코멘터리 생성 중 오류 발생)"
+
+    async def answer_with_context_stream(self, user_query: str, context_items: list):
+        """
+        Generate a final answer based on the user query and collected context.
+        """
+        try:
+            model = genai.GenerativeModel(model_name='gemini-3-flash-preview')
+            
+            context_str = "\n".join(f"- {c}" for c in context_items)
+            
+            prompt = f"""You are a helpful assistant.
+User Question: {user_query}
+
+Data Collected from Tools:
+{context_str}
+
+Please provide a helpful, detailed answer to the user's question based on the data above.
+Respond in Korean.
+"""
+            response = model.generate_content(prompt, stream=True)
+            
+            for chunk in response:
+                if chunk.text:
+                    yield chunk.text
+                    
+        except Exception as e:
+            print(f"Answer generation error: {e}")
+            yield f"(답변 생성 중 오류 발생: {e})"
 
 
