@@ -9,3 +9,24 @@ wheels/
 # Virtual environments
 .venv
 .env
+
+# IDE / Editor
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+test/test_*.log
+
+# Logs
+*.log
+logs/

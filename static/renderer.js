@@ -1,7 +1,7 @@
 const messagesDiv = document.getElementById('messages');
 const userInput = document.getElementById('user-input');
 const sendBtn = document.getElementById('send-btn');
-const uiModeToggle = document.getElementById('ui-mode-toggle');
+// const uiModeToggle = document.getElementById('ui-mode-toggle');
 
 // State for data bindings (very simple global store)
 let dataStore = {};
@@ -116,6 +116,11 @@ function addA2UIWidget(a2uiData) {
                         el.innerText = text;
                     }
 
+
+                    // Check for custom style override
+                    if (comp.Text.style && typeof comp.Text.style === 'object') {
+                        Object.assign(el.style, comp.Text.style);
+                    }
                     return el;
                 } else if (comp.TextField) {
                     const el = document.createElement('div');
@@ -157,7 +162,10 @@ function addA2UIWidget(a2uiData) {
                     const style = comp.Column.style || '';
 
                     // Handle news-specific column styles
-                    if (style === 'news-card' || style === 'product-card') {
+                    if (typeof style === 'object') {
+                        col.className = 'a2ui-column';
+                        Object.assign(col.style, style);
+                    } else if (style === 'news-card' || style === 'product-card') {
                         col.className = 'a2ui-news-card';
                     } else if (style === 'news-header') {
                         col.className = 'a2ui-news-header';
@@ -176,7 +184,11 @@ function addA2UIWidget(a2uiData) {
                     const row = document.createElement('div');
                     const style = comp.Row.style || '';
 
-                    if (style === 'news-meta') {
+                    if (typeof style === 'object') {
+                        row.className = 'a2ui-row';
+                        row.style.display = 'flex';
+                        Object.assign(row.style, style);
+                    } else if (style === 'news-meta') {
                         row.className = 'a2ui-news-meta';
                     } else if (style === 'product-row') {
                         row.className = 'a2ui-row';
@@ -232,11 +244,16 @@ function addA2UIWidget(a2uiData) {
                     const chartContainer = document.createElement('div');
                     chartContainer.className = 'a2ui-chart';
                     chartContainer.style.width = '100%';
-                    chartContainer.style.height = '300px'; // Increased height for better visibility
+                    chartContainer.style.height = '300px';
                     chartContainer.style.padding = '10px 0';
 
-                    const data = comp.Chart.data || [];
-                    if (data.length < 2) return chartContainer;
+                    // Support both single data and multiple series
+                    const singleData = comp.Chart.data || [];
+                    const seriesData = comp.Chart.series || [];
+
+                    // Check if we have enough data
+                    const hasValidData = singleData.length >= 2 || seriesData.some(s => s.data && s.data.length >= 2);
+                    if (!hasValidData) return chartContainer;
 
                     setTimeout(() => {
                         try {
@@ -244,8 +261,10 @@ function addA2UIWidget(a2uiData) {
                                 console.error("LightweightCharts is not loaded.");
                                 return;
                             }
+                            // Use fallback width if clientWidth is 0 (DOM not yet laid out)
+                            const chartWidth = chartContainer.clientWidth || 500;
                             const chart = LightweightCharts.createChart(chartContainer, {
-                                width: chartContainer.clientWidth,
+                                width: chartWidth,
                                 height: 300,
                                 layout: {
                                     background: { type: 'solid', color: 'transparent' },
@@ -257,13 +276,38 @@ function addA2UIWidget(a2uiData) {
                                 },
                             });
 
-                            const areaSeries = chart.addSeries(LightweightCharts.AreaSeries, {
-                                lineColor: comp.Chart.color || '#2962FF',
-                                topColor: (comp.Chart.color || '#2962FF') + '66', // Add transparency
-                                bottomColor: (comp.Chart.color || '#2962FF') + '04',
-                            });
+                            // If we have series array, render multiple lines
+                            if (seriesData.length > 0) {
+                                seriesData.forEach((series, index) => {
+                                    if (!series.data || series.data.length < 2) return;
 
-                            areaSeries.setData(data); // data is already in { time, value } format
+                                    if (index === 0) {
+                                        // First series (Price) as Area chart
+                                        const areaSeries = chart.addSeries(LightweightCharts.AreaSeries, {
+                                            lineColor: series.color || '#0F9D58',
+                                            topColor: (series.color || '#0F9D58') + '66',
+                                            bottomColor: (series.color || '#0F9D58') + '04',
+                                            lineWidth: 2,
+                                        });
+                                        areaSeries.setData(series.data);
+                                    } else {
+                                        // Moving averages as Line charts
+                                        const lineSeries = chart.addSeries(LightweightCharts.LineSeries, {
+                                            color: series.color || '#2962FF',
+                                            lineWidth: 1,
+                                        });
+                                        lineSeries.setData(series.data);
+                                    }
+                                });
+                            } else {
+                                // Legacy: single data array
+                                const areaSeries = chart.addSeries(LightweightCharts.AreaSeries, {
+                                    lineColor: comp.Chart.color || '#2962FF',
+                                    topColor: (comp.Chart.color || '#2962FF') + '66',
+                                    bottomColor: (comp.Chart.color || '#2962FF') + '04',
+                                });
+                                areaSeries.setData(singleData);
+                            }
 
                             chart.timeScale().fitContent();
 
@@ -341,7 +385,7 @@ async function sendMessage() {
     addMessage(text, true);
     userInput.value = '';
 
-    const isUiMode = uiModeToggle.checked;
+    const isUiMode = true; // uiModeToggle.checked;
 
     try {
         // Use streaming endpoint

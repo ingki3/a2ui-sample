@@ -88,6 +88,18 @@ async def chat(request: Request, chat_req: ChatRequest):
             elif tool_name == "get_stock_chart":
                 symbol = args.get("symbol")
                 res, _ = stock_service.get_stock_chart(symbol)
+
+            elif tool_name == "get_stock_dividends":
+                symbol = args.get("symbol")
+                res, _ = stock_service.get_stock_dividends(symbol)
+
+            elif tool_name == "get_stock_holders":
+                symbol = args.get("symbol")
+                res, _ = stock_service.get_stock_holders(symbol)
+
+            elif tool_name == "get_stock_calendar":
+                symbol = args.get("symbol")
+                res, _ = stock_service.get_stock_calendar(symbol)
                 
             if res:
                 responses.append(res)
@@ -234,6 +246,18 @@ async def chat_stream(request: Request, chat_req: ChatRequest):
                 elif tool_name == "get_company_fundamentals":
                     symbol = args.get("symbol")
                     res, context = stock_service.get_company_fundamentals(symbol)
+
+                elif tool_name == "get_stock_dividends":
+                    symbol = args.get("symbol")
+                    res, context = stock_service.get_stock_dividends(symbol)
+
+                elif tool_name == "get_stock_holders":
+                    symbol = args.get("symbol")
+                    res, context = stock_service.get_stock_holders(symbol)
+
+                elif tool_name == "get_stock_calendar":
+                    symbol = args.get("symbol")
+                    res, context = stock_service.get_stock_calendar(symbol)
                 
                 # Send A2UI response if available
                 if res and isinstance(res, A2UIResponse):

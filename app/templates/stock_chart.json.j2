@@ -8,7 +8,7 @@
           "Column": {
             "children": {
               "explicitList": [
-                "{{ uid }}_title", "{{ uid }}_chart_viz", "{{ uid }}_current_price"
+                "{{ uid }}_title", "{{ uid }}_chart_viz", "{{ uid }}_current_price", "{{ uid }}_legend"
               ]
             }
           }
@@ -23,16 +23,83 @@
         "component": { "Text": { "text": { "literalString": "Current: {{ current_price }}" }, "usageHint": "h3" } }
       },
       {
+        "id": "{{ uid }}_legend",
+        "component": {
+          "Row": {
+            "style": { "gap": "16px", "justifyContent": "center", "marginTop": "8px", "flexWrap": "wrap" },
+            "children": {
+              "explicitList": [
+                "{{ uid }}_legend_price",
+                "{{ uid }}_legend_ma20",
+                "{{ uid }}_legend_ma60",
+                "{{ uid }}_legend_ma120"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_legend_price",
+        "component": { "Text": { "text": { "literalString": "● Price" }, "usageHint": "caption", "style": { "color": "#0F9D58", "fontWeight": "bold" } } }
+      },
+      {
+        "id": "{{ uid }}_legend_ma20",
+        "component": { "Text": { "text": { "literalString": "● MA20" }, "usageHint": "caption", "style": { "color": "#FF6B6B", "fontWeight": "bold" } } }
+      },
+      {
+        "id": "{{ uid }}_legend_ma60",
+        "component": { "Text": { "text": { "literalString": "● MA60" }, "usageHint": "caption", "style": { "color": "#4ECDC4", "fontWeight": "bold" } } }
+      },
+      {
+        "id": "{{ uid }}_legend_ma120",
+        "component": { "Text": { "text": { "literalString": "● MA120" }, "usageHint": "caption", "style": { "color": "#FFE66D", "fontWeight": "bold" } } }
+      },
+      {
         "id": "{{ uid }}_chart_viz",
         "component": {
           "Chart": {
-            "data": [
-              {% for p in prices %}
-              { "time": "{{ p.time }}", "value": {{ p.value }} }
-              {% if not loop.last %},{% endif %}
-              {% endfor %}
-            ],
-            "color": "#0F9D58"
+            "series": [
+              {
+                "name": "Price",
+                "color": "#0F9D58",
+                "data": [
+                  {% for p in prices %}
+                  { "time": "{{ p.time }}", "value": {{ p.value }} }
+                  {% if not loop.last %},{% endif %}
+                  {% endfor %}
+                ]
+              },
+              {
+                "name": "MA20",
+                "color": "#FF6B6B",
+                "data": [
+                  {% for p in ma20 %}
+                  { "time": "{{ p.time }}", "value": {{ p.value }} }
+                  {% if not loop.last %},{% endif %}
+                  {% endfor %}
+                ]
+              },
+              {
+                "name": "MA60",
+                "color": "#4ECDC4",
+                "data": [
+                  {% for p in ma60 %}
+                  { "time": "{{ p.time }}", "value": {{ p.value }} }
+                  {% if not loop.last %},{% endif %}
+                  {% endfor %}
+                ]
+              },
+              {
+                "name": "MA120",
+                "color": "#FFE66D",
+                "data": [
+                  {% for p in ma120 %}
+                  { "time": "{{ p.time }}", "value": {{ p.value }} }
+                  {% if not loop.last %},{% endif %}
+                  {% endfor %}
+                ]
+              }
+            ]
           }
         }
       }

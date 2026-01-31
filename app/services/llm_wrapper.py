@@ -83,7 +83,7 @@ class LLMWrapper:
                 },
                 {
                     "name": "get_stock_chart",
-                    "description": "Get the stock price history chart for a given symbol.",
+                    "description": "Get the stock price history chart and current price. Always consider using this when the user asks about stock performance, price, or trends.",
                     "parameters": {
                         "type": "OBJECT",
                         "properties": {
@@ -97,7 +97,7 @@ class LLMWrapper:
                 },
                 {
                     "name": "get_stock_news",
-                    "description": "Get recent news articles for a given stock symbol.",
+                    "description": "Get recent news articles for a given stock symbol. Use this when the user mentions they prefer news, facts, or factual information, or when they want to know about recent events, headlines, or market updates about a stock.",
                     "parameters": {
                         "type": "OBJECT",
                         "properties": {
@@ -111,7 +111,7 @@ class LLMWrapper:
                 },
                 {
                     "name": "get_stock_info",
-                    "description": "Get company profile, key financials, and analyst recommendations for a given stock symbol. Use this when the user asks for stock info, analysis, or profile.",
+                    "description": "Get company profile, business summary, market cap, sector, and key financials. Useful to provide context and fundamental details about a company. Can be used together with stock chart for a comprehensive overview.",
                     "parameters": {
                         "type": "OBJECT",
                         "properties": {
@@ -163,6 +163,48 @@ class LLMWrapper:
                             }
                         },
                         "required": ["query"]
+                    }
+                },
+                {
+                    "name": "get_stock_dividends",
+                    "description": "Get dividend history and yield for a stock. Use when users ask about dividends, payout history, or yield.",
+                    "parameters": {
+                        "type": "OBJECT",
+                        "properties": {
+                            "symbol": {
+                                "type": "STRING",
+                                "description": "The stock symbol (e.g. AAPL, GOOG, TSLA)."
+                            }
+                        },
+                        "required": ["symbol"]
+                    }
+                },
+                {
+                    "name": "get_stock_holders",
+                    "description": "Get information about major holders, institutional ownership, and insider holdings. Use when users ask about shareholders, who owns the stock, or institutional investors.",
+                    "parameters": {
+                        "type": "OBJECT",
+                        "properties": {
+                            "symbol": {
+                                "type": "STRING",
+                                "description": "The stock symbol (e.g. AAPL, GOOG, TSLA)."
+                            }
+                        },
+                        "required": ["symbol"]
+                    }
+                },
+                {
+                    "name": "get_stock_calendar",
+                    "description": "Get upcoming events like earnings dates and ex-dividend dates. Use when users ask about earnings release, important dates, or financial calendar.",
+                    "parameters": {
+                        "type": "OBJECT",
+                        "properties": {
+                            "symbol": {
+                                "type": "STRING",
+                                "description": "The stock symbol (e.g. AAPL, GOOG, TSLA)."
+                            }
+                        },
+                        "required": ["symbol"]
                     }
                 }
             ]

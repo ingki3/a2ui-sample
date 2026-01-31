@@ -13,6 +13,7 @@ class TextComponent(ComponentBase):
     usageHint: Optional[str] = None
     text: TextContent
     url: Optional[TextContent] = None
+    style: Optional[Dict[str, Any]] = None
 
 class TextFieldComponent(ComponentBase):
     label: TextContent
@@ -35,7 +36,7 @@ class ColumnChildren(BaseModel):
 
 class ColumnComponent(ComponentBase):
     children: ColumnChildren
-    style: Optional[str] = None
+    style: Optional[Dict[str, Any]] = None
 
 class ImageComponent(ComponentBase):
     url: TextContent
@@ -43,15 +44,21 @@ class ImageComponent(ComponentBase):
 
 class RowComponent(ComponentBase):
     children: ColumnChildren # Reuse ColumnChildren because structure is same (explicitList)
-    style: Optional[str] = None
+    style: Optional[Dict[str, Any]] = None
 
 class ChartDataPoint(BaseModel):
     time: str
     value: float
 
-class ChartComponent(ComponentBase):
+class ChartSeries(BaseModel):
+    name: str
+    color: Optional[str] = "#0F9D58"
     data: List[ChartDataPoint]
-    color: Optional[str] = "#0F9D58" # Default Google Green
+
+class ChartComponent(ComponentBase):
+    data: Optional[List[ChartDataPoint]] = None  # For single series (backward compat)
+    series: Optional[List[ChartSeries]] = None   # For multiple series
+    color: Optional[str] = "#0F9D58"  # Default color for single series
 
 class IFrameComponent(ComponentBase):
     url: TextContent

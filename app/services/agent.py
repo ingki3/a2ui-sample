@@ -92,7 +92,7 @@ class RestaurantService:
             root = ET.fromstring(response.text)
             channel = root.find("channel")
             
-            restaurants = []
+            places = []
             for idx, item in enumerate(channel.findall("item")):
                 # Clean HTML tags from title
                 title = item.find("title").text or ""
@@ -208,6 +208,7 @@ class RestaurantService:
 class StockService(RestaurantService):
     def get_stock_chart(self, symbol: str) -> Union[A2UIResponse, TextResponse]:
         import yfinance as yf
+        import pandas as pd
         
         print(f"Fetching stock chart for {symbol}")
         try:
@@ -218,25 +219,123 @@ class StockService(RestaurantService):
             if hist.empty:
                  return TextResponse(text=f"No data found for {symbol}")
 
+            # Calculate moving averages
+            hist['MA20'] = hist['Close'].rolling(window=20).mean()
+            hist['MA60'] = hist['Close'].rolling(window=60).mean()
+            hist['MA120'] = hist['Close'].rolling(window=120).mean()
+
             # Prepare data for ChartComponent (native rendering)
             prices = []
+            ma20 = []
+            ma60 = []
+            ma120 = []
             
             for index, row in hist.iterrows():
+                time_str = index.strftime("%Y-%m-%d")
                 prices.append({
-                    "time": index.strftime("%Y-%m-%d"),
+                    "time": time_str,
                     "value": float(row['Close'])
                 })
+                # Only add MA values if they exist (not NaN)
+                if not pd.isna(row['MA20']):
+                    ma20.append({"time": time_str, "value": float(row['MA20'])})
+                if not pd.isna(row['MA60']):
+                    ma60.append({"time": time_str, "value": float(row['MA60'])})
+                if not pd.isna(row['MA120']):
+                    ma120.append({"time": time_str, "value": float(row['MA120'])})
 
-            context = f"Showing stock chart for {symbol}. Current price is ${hist['Close'].iloc[-1]:.2f}."
+            context = f"Showing stock chart for {symbol} with 20/60/120 day moving averages. Current price is ${hist['Close'].iloc[-1]:.2f}."
             return self._render_template("stock_chart.json.j2", {
                 "symbol": symbol.upper(),
-                "prices": prices, # List of {time, value}
+                "prices": prices,
+                "ma20": ma20,
+                "ma60": ma60,
+                "ma120": ma120,
                 "current_price": f"${hist['Close'].iloc[-1]:.2f}"
             }), context
             
         except Exception as e:
             print(f"Stock Error: {e}")
             return TextResponse(text=f"Error fetching stock data: {e}"), f"Error fetching stock chart for {symbol}: {e}"
+
+    def get_stock_dividends(self, symbol: str) -> Union[A2UIResponse, TextResponse]:
+        import yfinance as yf
+        try:
+            ticker = yf.Ticker(symbol)
+            divs = ticker.dividends
+            if divs.empty:
+                return TextResponse(text=f"No dividend data found for {symbol}"), f"No dividend data for {symbol}"
+            
+            # Last 20 entries
+            recent_divs = divs.tail(20)
+            data = []
+            for date, value in recent_divs.items():
+                data.append({"time": date.strftime("%Y-%m-%d"), "value": float(value)})
+            
+            current_yield = ticker.info.get('dividendYield', 0) * 100 if ticker.info.get('dividendYield') else 0
+            
+            return self._render_template("stock_dividends.json.j2", {
+                "symbol": symbol.upper(),
+                "dividends": data,
+                "yield": f"{current_yield:.2f}%"
+            }), f"Showing dividend history for {symbol}"
+        except Exception as e:
+            return TextResponse(text=f"Error fetching dividends: {e}"), f"Error: {e}"
+
+    def get_stock_holders(self, symbol: str) -> Union[A2UIResponse, TextResponse]:
+        import yfinance as yf
+        try:
+            ticker = yf.Ticker(symbol)
+            info = ticker.info
+            inst = ticker.institutional_holders
+            
+            insider_pct = f"{info.get('heldPercentInsiders', 0)*100:.2f}%" if info.get('heldPercentInsiders') is not None else "N/A"
+            inst_pct = f"{info.get('heldPercentInstitutions', 0)*100:.2f}%" if info.get('heldPercentInstitutions') is not None else "N/A"
+
+            top_holders = []
+            if inst is not None and not inst.empty:
+                for _, row in inst.head(5).iterrows():
+                    top_holders.append({
+                        "name": row['Holder'],
+                        "shares": f"{row['Shares']:,}",
+                        "value": f"${row['Value']:,}" if 'Value' in row else "-",
+                        "pct": f"{row['pctChange']*100:.2f}%" if 'pctChange' in row else "-"
+                    })
+            
+            return self._render_template("stock_holders.json.j2", {
+                "symbol": symbol.upper(),
+                "insider_pct": insider_pct,
+                "inst_pct": inst_pct,
+                "top_holders": top_holders
+            }), f"Showing holders for {symbol}"
+        except Exception as e:
+            return TextResponse(text=f"Error fetching holders: {e}"), f"Error: {e}"
+
+    def get_stock_calendar(self, symbol: str) -> Union[A2UIResponse, TextResponse]:
+        import yfinance as yf
+        try:
+            ticker = yf.Ticker(symbol)
+            cal = ticker.calendar
+            
+            events = []
+            if isinstance(cal, dict):
+                for k, v in cal.items():
+                    val = str(v)
+                    if hasattr(v, 'strftime'):
+                        val = v.strftime("%Y-%m-%d")
+                    elif isinstance(v, list) and len(v) > 0 and hasattr(v[0], 'strftime'):
+                         val = ", ".join([d.strftime("%Y-%m-%d") for d in v])
+                    elif isinstance(v, list):
+                        val = ", ".join(map(str, v))
+                    
+                    events.append({"name": k, "value": val})
+            
+            return self._render_template("stock_calendar.json.j2", {
+                "symbol": symbol.upper(),
+                "events": events
+            }), f"Showing calendar for {symbol}"
+        except Exception as e:
+            return TextResponse(text=f"Error fetching calendar: {e}"), f"Error: {e}"
 
     
     def get_stock_news(self, symbol: str) -> Union[A2UIResponse, TextResponse]:
@@ -279,9 +378,9 @@ class StockService(RestaurantService):
                 publisher = provider.get('displayName', 'Unknown')
                 
                 news_list.append({
-                    'title': content.get('title', 'No title'),
+                    'title': content.get('title', 'No title').replace('\\', '\\\\').replace('"', '\\"').replace('\n', ' '),
                     'link': link,
-                    'publisher': publisher,
+                    'publisher': publisher.replace('\\', '\\\\').replace('"', '\\"'),
                     'date': date_str
                 })
             

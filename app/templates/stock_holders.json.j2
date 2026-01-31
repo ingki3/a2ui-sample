@@ -1,0 +1,91 @@
+{
+  "surfaceUpdate": {
+    "surfaceId": "stock_holders",
+    "components": [
+      {
+        "id": "{{ uid }}_root",
+        "component": {
+          "Column": {
+            "style": { "gap": "12px" },
+            "children": {
+              "explicitList": [
+                "{{ uid }}_header",
+                "{{ uid }}_bd_title",
+                "{{ uid }}_bd_row",
+                "{{ uid }}_top_title",
+                "{{ uid }}_top_list"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_header",
+        "component": { "Text": { "text": { "literalString": "🏢 Ownership ({{ symbol }})" }, "usageHint": "h2" } }
+      },
+      {
+        "id": "{{ uid }}_bd_title",
+        "component": { "Text": { "text": { "literalString": "Ownership Breakdown" }, "usageHint": "h3" } }
+      },
+      {
+        "id": "{{ uid }}_bd_row",
+        "component": {
+          "Column": {
+             "style": { "padding": "16px", "backgroundColor": "#f0f0f0", "borderRadius": "8px", "marginBottom": "20px" },
+             "children": { "explicitList": ["{{ uid }}_insider", "{{ uid }}_inst"] }
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_insider",
+        "component": { "Text": { "text": { "literalString": "• Insiders: {{ insider_pct }}" }, "usageHint": "body" } }
+      },
+      {
+        "id": "{{ uid }}_inst",
+        "component": { "Text": { "text": { "literalString": "• Institutions: {{ inst_pct }}" }, "usageHint": "body" } }
+      },
+      {
+        "id": "{{ uid }}_top_title",
+        "component": { "Text": { "text": { "literalString": "Top Institutional Holders" }, "usageHint": "h3" } }
+      },
+      {
+        "id": "{{ uid }}_top_list",
+        "component": {
+          "Column": {
+            "style": { "gap": "8px" },
+            "children": {
+              "explicitList": [
+                {% for h in top_holders %}
+                "{{ uid }}_holder_{{ loop.index }}"
+                {% if not loop.last %},{% endif %}
+                {% endfor %}
+              ]
+            }
+          }
+        }
+      },
+      {% for h in top_holders %}
+      {
+        "id": "{{ uid }}_holder_{{ loop.index }}",
+        "component": {
+          "Column": {
+            "style": { "padding": "12px", "border": "1px solid #eee", "borderRadius": "8px" },
+            "children": { "explicitList": ["{{ uid }}_hname_{{ loop.index }}", "{{ uid }}_hdetail_{{ loop.index }}"] }
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_hname_{{ loop.index }}",
+        "component": { "Text": { "text": { "literalString": "{{ h.name }}" }, "usageHint": "h4" } }
+      },
+      {
+        "id": "{{ uid }}_hdetail_{{ loop.index }}",
+        "component": { "Text": { "text": { "literalString": "Shares: {{ h.shares }} | Value: {{ h.value }} ({{ h.pct }})" }, "usageHint": "caption" } }
+      }
+      {% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]
+  },
+  "dataModelUpdate": { "surfaceId": "stock_holders", "contents": [] },
+  "beginRendering": { "surfaceId": "stock_holders", "root": "{{ uid }}_root" }
+}
