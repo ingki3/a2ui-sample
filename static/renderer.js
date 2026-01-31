@@ -395,14 +395,19 @@ async function sendMessage() {
                         if (currentEvent === 'a2ui') {
                             addA2UIWidget(data.data);
                         } else if (currentEvent === 'text') {
-                            // Streaming text
+                            // Streaming text with Markdown rendering
                             accumulatedText += data.text;
                             if (!streamingTextDiv) {
                                 streamingTextDiv = document.createElement('div');
-                                streamingTextDiv.className = 'message agent-msg';
+                                streamingTextDiv.className = 'message agent-msg markdown-body';
                                 messagesDiv.appendChild(streamingTextDiv);
                             }
-                            streamingTextDiv.textContent = accumulatedText;
+                            // Use marked to render Markdown
+                            if (typeof marked !== 'undefined') {
+                                streamingTextDiv.innerHTML = marked.parse(accumulatedText);
+                            } else {
+                                streamingTextDiv.textContent = accumulatedText;
+                            }
                             messagesDiv.scrollTop = messagesDiv.scrollHeight;
                         } else if (currentEvent === 'done') {
                             // Done
