@@ -1,0 +1,85 @@
+{
+  "surfaceUpdate": {
+    "surfaceId": "restaurant_list",
+    "components": [
+      {
+        "id": "{{ uid }}_root",
+        "component": {
+          "Column": {
+            "children": {
+              "explicitList": [
+                "{{ uid }}_title",
+                "{{ uid }}_result_count",
+                {% for r in restaurants %}
+                "{{ uid }}_rest_row_{{ loop.index }}"
+                {% if not loop.last %},{% endif %}
+                {% endfor %}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_title",
+        "component": { "Text": { "text": { "literalString": "🍽️ Restaurants in {{ location }}" }, "usageHint": "h2" } }
+      },
+      {
+        "id": "{{ uid }}_result_count",
+        "component": { "Text": { "text": { "literalString": "Found {{ restaurants|length }} places matching your criteria." }, "usageHint": "caption" } }
+      },
+      
+      {% for r in restaurants %}
+      {
+        "id": "{{ uid }}_rest_row_{{ loop.index }}",
+        "component": {
+            "Column": {
+                "children": {
+                    "explicitList": ["{{ uid }}_map_{{ loop.index }}", "{{ uid }}_info_col_{{ loop.index }}"]
+                }
+            }
+        }
+      },
+      {
+        "id": "{{ uid }}_map_{{ loop.index }}",
+        "component": {
+            "IFrame": {
+                "url": { "literalString": "https://www.google.com/maps/embed/v1/place?key={{ maps_api_key }}&q={{ r.lat }},{{ r.lng }}&zoom=16" },
+                "height": 250
+            }
+        }
+      },
+      {
+        "id": "{{ uid }}_info_col_{{ loop.index }}",
+        "component": {
+            "Column": {
+                "children": {
+                    "explicitList": ["{{ uid }}_name_{{ loop.index }}", "{{ uid }}_cuisine_{{ loop.index }}", "{{ uid }}_address_{{ loop.index }}"]
+                }
+            }
+        }
+      },
+      {
+        "id": "{{ uid }}_name_{{ loop.index }}",
+        "component": { "Text": { "text": { "literalString": "{{ r.name }}" }, "usageHint": "h3" } }
+      },
+      {
+         "id": "{{ uid }}_cuisine_{{ loop.index }}",
+         "component": { "Text": { "text": { "literalString": "{{ r.cuisine }}" }, "usageHint": "body" } }
+      },
+      {
+         "id": "{{ uid }}_address_{{ loop.index }}",
+         "component": { "Text": { "text": { "literalString": "📍 {{ r.location }}" }, "usageHint": "caption" } }
+      }
+      {% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]
+  },
+  "dataModelUpdate": {
+    "surfaceId": "restaurant_list",
+    "contents": []
+  },
+  "beginRendering": {
+    "surfaceId": "restaurant_list",
+    "root": "{{ uid }}_root"
+  }
+}

@@ -1,0 +1,114 @@
+from typing import List, Dict, Any, Optional, Union, Literal
+from pydantic import BaseModel, Field
+
+# Base Component
+class ComponentBase(BaseModel):
+    pass
+
+class TextContent(BaseModel):
+    literalString: Optional[str] = None
+    path: Optional[str] = None
+
+class TextComponent(ComponentBase):
+    usageHint: Optional[str] = None
+    text: TextContent
+    url: Optional[TextContent] = None
+    style: Optional[Dict[str, Any]] = None
+
+class TextFieldComponent(ComponentBase):
+    label: TextContent
+    text: TextContent
+
+class ActionContext(BaseModel):
+    key: str
+    value: TextContent
+
+class Action(BaseModel):
+    name: str
+    context: List[ActionContext] = []
+
+class ButtonComponent(ComponentBase):
+    action: Action
+    child: str # ID reference to a text component usually
+
+class ColumnChildren(BaseModel):
+    explicitList: List[str]
+
+class ColumnComponent(ComponentBase):
+    children: ColumnChildren
+    style: Optional[Dict[str, Any]] = None
+
+class ImageComponent(ComponentBase):
+    url: TextContent
+    altText: Optional[TextContent] = None
+
+class RowComponent(ComponentBase):
+    children: ColumnChildren # Reuse ColumnChildren because structure is same (explicitList)
+    style: Optional[Dict[str, Any]] = None
+
+class ChartDataPoint(BaseModel):
+    time: str
+    value: float
+
+class ChartSeries(BaseModel):
+    name: str
+    color: Optional[str] = "#0F9D58"
+    data: List[ChartDataPoint]
+
+class ChartComponent(ComponentBase):
+    data: Optional[List[ChartDataPoint]] = None  # For single series (backward compat)
+    series: Optional[List[ChartSeries]] = None   # For multiple series
+    color: Optional[str] = "#0F9D58"  # Default color for single series
+
+class IFrameComponent(ComponentBase):
+    url: TextContent
+    height: Optional[int] = 300
+    width: Optional[str] = "100%"
+
+# Union of all possible component types
+class ComponentType(BaseModel):
+    Text: Optional[TextComponent] = None
+    TextField: Optional[TextFieldComponent] = None
+    Button: Optional[ButtonComponent] = None
+    Column: Optional[ColumnComponent] = None
+    Row: Optional[RowComponent] = None
+    Image: Optional[ImageComponent] = None
+    Chart: Optional[ChartComponent] = None
+    IFrame: Optional[IFrameComponent] = None
+
+class ComponentEntry(BaseModel):
+    id: str
+    component: ComponentType
+
+class SurfaceUpdate(BaseModel):
+    surfaceId: str
+    components: List[ComponentEntry]
+
+class DataValue(BaseModel):
+    key: str
+    valueString: str
+
+class DataModelContents(BaseModel):
+    key: str # e.g. "calculator"
+    valueMap: List[DataValue]
+
+class DataModelUpdate(BaseModel):
+    surfaceId: str
+    contents: List[DataModelContents]
+
+class BeginRendering(BaseModel):
+    surfaceId: str
+    root: str
+
+class A2UIData(BaseModel):
+    surfaceUpdate: Optional[SurfaceUpdate] = None
+    dataModelUpdate: Optional[DataModelUpdate] = None
+    beginRendering: Optional[BeginRendering] = None
+
+class A2UIResponse(BaseModel):
+    kind: str = "a2ui" # Custom discriminator
+    data: A2UIData
+
+class TextResponse(BaseModel):
+    kind: str = "text"
+    text: str

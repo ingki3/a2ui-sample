@@ -1,0 +1,103 @@
+{
+  "surfaceUpdate": {
+    "surfaceId": "stock_news",
+    "components": [
+      {
+        "id": "{{ uid }}_root",
+        "component": {
+          "Column": {
+            "children": {
+              "explicitList": [
+                "{{ uid }}_header",
+                {% for news in news_list %}
+                "{{ uid }}_news_{{ loop.index }}"
+                {% if not loop.last %},{% endif %}
+                {% endfor %}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_header",
+        "component": {
+          "Column": {
+            "children": {
+              "explicitList": ["{{ uid }}_title", "{{ uid }}_subtitle"]
+            },
+            "style": "news-header"
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_title",
+        "component": { "Text": { "text": { "literalString": "📰 {{ symbol }} 관련 뉴스" }, "usageHint": "news-header-title" } }
+      },
+      {
+        "id": "{{ uid }}_subtitle",
+        "component": { "Text": { "text": { "literalString": "최신 기사 {{ news_list|length }}건" }, "usageHint": "news-header-subtitle" } }
+      },
+      {% for news in news_list %}
+      {
+        "id": "{{ uid }}_news_{{ loop.index }}",
+        "component": {
+          "Column": {
+            "children": {
+              "explicitList": ["{{ uid }}_news_title_{{ loop.index }}", "{{ uid }}_news_meta_{{ loop.index }}"]
+            },
+            "style": "news-card"
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_news_title_{{ loop.index }}",
+        "component": { 
+          "Text": { 
+            "text": { "literalString": "{{ news.title }}" }, 
+            "usageHint": "news-title",
+            "url": { "literalString": "{{ news.link }}" }
+          } 
+        }
+      },
+      {
+        "id": "{{ uid }}_news_meta_{{ loop.index }}",
+        "component": {
+          "Row": {
+            "children": {
+              "explicitList": ["{{ uid }}_news_publisher_{{ loop.index }}", "{{ uid }}_news_date_{{ loop.index }}"]
+            },
+            "style": "news-meta"
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_news_publisher_{{ loop.index }}",
+        "component": { 
+          "Text": { 
+            "text": { "literalString": "{{ news.publisher }}" }, 
+            "usageHint": "news-publisher" 
+          } 
+        }
+      },
+      {
+        "id": "{{ uid }}_news_date_{{ loop.index }}",
+        "component": { 
+          "Text": { 
+            "text": { "literalString": "{{ news.date }}" }, 
+            "usageHint": "news-date" 
+          } 
+        }
+      }
+      {% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]
+  },
+  "dataModelUpdate": {
+    "surfaceId": "stock_news",
+    "contents": []
+  },
+  "beginRendering": {
+    "surfaceId": "stock_news",
+    "root": "{{ uid }}_root"
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "surfaceUpdate": {
+    "surfaceId": "stock_calendar",
+    "components": [
+      {
+        "id": "{{ uid }}_root",
+        "component": {
+          "Column": {
+            "style": { "gap": "10px" },
+            "children": {
+              "explicitList": [
+                "{{ uid }}_header",
+                "{{ uid }}_table_container"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_header",
+        "component": { "Text": { "text": { "literalString": "📅 Stock Calendar ({{ symbol }})" }, "usageHint": "h2" } }
+      },
+      {
+        "id": "{{ uid }}_table_container",
+        "component": {
+          "Column": {
+            "children": {
+               "explicitList": [
+                 {% for e in events %}
+                 "{{ uid }}_event_{{ loop.index }}"
+                 {% if not loop.last %},{% endif %}
+                 {% endfor %}
+               ]
+            }
+          }
+        }
+      },
+      {% for e in events %}
+      {
+        "id": "{{ uid }}_event_{{ loop.index }}",
+        "component": {
+          "Column": {
+             "style": { "padding": "12px", "borderBottom": "1px solid #eee", "marginBottom": "4px" },
+             "children": { "explicitList": ["{{ uid }}_ename_{{ loop.index }}", "{{ uid }}_evalue_{{ loop.index }}"] }
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_ename_{{ loop.index }}",
+        "component": { "Text": { "text": { "literalString": "{{ e.name }}" }, "usageHint": "body" } }
+      },
+      {
+        "id": "{{ uid }}_evalue_{{ loop.index }}",
+        "component": { "Text": { "text": { "literalString": "{{ e.value }}" }, "usageHint": "h4" } }
+      }
+      {% if not loop.last %},{% endif %}
+      {% endfor %}
+    ]
+  },
+  "dataModelUpdate": { "surfaceId": "stock_calendar", "contents": [] },
+  "beginRendering": { "surfaceId": "stock_calendar", "root": "{{ uid }}_root" }
+}

@@ -1,0 +1,71 @@
+{
+  "surfaceUpdate": {
+    "surfaceId": "stock_dividends",
+    "components": [
+      {
+        "id": "{{ uid }}_root",
+        "component": {
+          "Column": {
+            "style": { "gap": "16px" },
+            "children": {
+              "explicitList": [
+                "{{ uid }}_header",
+                "{{ uid }}_yield_card",
+                "{{ uid }}_chart_section"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_header",
+        "component": {
+          "Text": {
+            "text": { "literalString": "💰 Dividend History ({{ symbol }})" },
+            "usageHint": "h2"
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_yield_card",
+        "component": {
+          "Column": {
+             "style": { "padding": "16px", "backgroundColor": "#f8f9fa", "borderRadius": "8px" },
+             "children": {
+                 "explicitList": ["{{ uid }}_yield_text"]
+             }
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_yield_text",
+        "component": {
+          "Text": {
+            "text": { "literalString": "Current Dividend Yield: {{ yield }}" },
+            "usageHint": "h3"
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_chart_section",
+         "component": {
+            "Chart": {
+                "series": [{
+                    "name": "Dividends",
+                    "color": "#4285F4",
+                    "data": {{ dividends | tojson }}
+                }]
+            }
+         }
+      }
+    ]
+  },
+  "dataModelUpdate": {
+    "surfaceId": "stock_dividends",
+    "contents": []
+  },
+  "beginRendering": {
+    "surfaceId": "stock_dividends",
+    "root": "{{ uid }}_root"
+  }
+}

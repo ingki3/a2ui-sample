@@ -1,0 +1,66 @@
+{
+  "surfaceUpdate": {
+    "surfaceId": "stock_indicators",
+    "components": [
+      {
+        "id": "{{ uid }}_root",
+        "component": {
+          "Column": {
+            "children": {
+              "explicitList": [
+                "{{ uid }}_header",
+                "{{ uid }}_price_info",
+                "{{ uid }}_rsi_box",
+                "{{ uid }}_macd_box"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_header",
+        "component": { "Text": { "text": { "literalString": "📉 Technical Analysis: {{ symbol }}" }, "usageHint": "h2" } }
+      },
+      {
+        "id": "{{ uid }}_price_info",
+        "component": { "Text": { "text": { "literalString": "Based on close price {{ price }} at {{ date }}" }, "usageHint": "caption" } }
+      },
+
+      {
+        "id": "{{ uid }}_rsi_box",
+        "component": {
+            "Column": {
+                "children": {
+                    "explicitList": ["{{ uid }}_rsi_title", "{{ uid }}_rsi_val", "{{ uid }}_rsi_sig"]
+                }
+            }
+        }
+      },
+      { "id": "{{ uid }}_rsi_title", "component": { "Text": { "text": { "literalString": "RSI (14-day)" }, "usageHint": "h3" } } },
+      { "id": "{{ uid }}_rsi_val", "component": { "Text": { "text": { "literalString": "Value: {{ rsi.value }}" }, "usageHint": "h1", "color": "{{ rsi.color }}" } } },
+      { "id": "{{ uid }}_rsi_sig", "component": { "Text": { "text": { "literalString": "Signal: {{ rsi.signal }}" }, "usageHint": "body" } } },
+
+      {
+        "id": "{{ uid }}_macd_box",
+        "component": {
+            "Column": {
+                "children": {
+                    "explicitList": ["{{ uid }}_macd_title", "{{ uid }}_macd_vals", "{{ uid }}_macd_sig"]
+                }
+            }
+        }
+      },
+      { "id": "{{ uid }}_macd_title", "component": { "Text": { "text": { "literalString": "MACD (12, 26, 9)" }, "usageHint": "h3" } } },
+      { "id": "{{ uid }}_macd_vals", "component": { "Text": { "text": { "literalString": "MACD: {{ macd.line }} | Signal: {{ macd.signal_line }}" }, "usageHint": "body" } } },
+      { "id": "{{ uid }}_macd_sig", "component": { "Text": { "text": { "literalString": "Trend: {{ macd.signal }}" }, "usageHint": "h2", "color": "{{ macd.color }}" } } }
+    ]
+  },
+  "dataModelUpdate": {
+    "surfaceId": "stock_indicators",
+    "contents": []
+  },
+  "beginRendering": {
+    "surfaceId": "stock_indicators",
+    "root": "{{ uid }}_root"
+  }
+}

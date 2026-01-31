@@ -1,0 +1,101 @@
+{
+  "surfaceUpdate": {
+    "surfaceId": "stock_info",
+    "components": [
+      {
+        "id": "{{ uid }}_root",
+        "component": {
+          "Column": {
+            "children": {
+              "explicitList": [
+                "{{ uid }}_header",
+                "{{ uid }}_profile_section",
+                "{{ uid }}_stats_title",
+                "{{ uid }}_stats_grid",
+                "{{ uid }}_analysis_title",
+                "{{ uid }}_analysis_row"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_header",
+        "component": { "Text": { "text": { "literalString": "🏢 {{ profile.name }} ({{ symbol }})" }, "usageHint": "h1" } }
+      },
+      
+      {
+        "id": "{{ uid }}_profile_section",
+        "component": {
+          "Column": {
+            "children": {
+              "explicitList": ["{{ uid }}_sector_industry", "{{ uid }}_summary"]
+            }
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_sector_industry",
+        "component": { "Text": { "text": { "literalString": "{{ profile.sector }} | {{ profile.industry }}" }, "usageHint": "caption" } }
+      },
+      {
+        "id": "{{ uid }}_summary",
+        "component": { "Text": { "text": { "literalString": "{{ profile.summary }}" }, "usageHint": "body" } }
+      },
+      
+      {
+        "id": "{{ uid }}_separator_1",
+        "component": { "Text": { "text": { "literalString": " " }, "usageHint": "body" } }
+      },
+
+      {
+        "id": "{{ uid }}_stats_title",
+        "component": { "Text": { "text": { "literalString": "📊 Key Financials" }, "usageHint": "h3" } }
+      },
+      {
+        "id": "{{ uid }}_stats_grid",
+        "component": {
+            "Column": {
+                "children": {
+                    "explicitList": [
+                        "{{ uid }}_stat_mktcap",
+                        "{{ uid }}_stat_pe", 
+                        "{{ uid }}_stat_yield",
+                        "{{ uid }}_stat_range"
+                    ]
+                }
+            }
+        }
+      },
+      { "id": "{{ uid }}_stat_mktcap", "component": { "Text": { "text": { "literalString": "• Market Cap: {{ financials.marketCap }}" }, "usageHint": "body" } } },
+      { "id": "{{ uid }}_stat_pe", "component": { "Text": { "text": { "literalString": "• P/E Ratio: {{ financials.trailingPE }}" }, "usageHint": "body" } } },
+      { "id": "{{ uid }}_stat_yield", "component": { "Text": { "text": { "literalString": "• Div Yield: {{ financials.dividendYield }}" }, "usageHint": "body" } } },
+      { "id": "{{ uid }}_stat_range", "component": { "Text": { "text": { "literalString": "• 52W Range: {{ financials.fiftyTwoWeekLow }} - {{ financials.fiftyTwoWeekHigh }}" }, "usageHint": "body" } } },
+
+      {
+        "id": "{{ uid }}_analysis_title",
+        "component": { "Text": { "text": { "literalString": "📈 Analyst Analysis" }, "usageHint": "h3" } }
+      },
+      {
+        "id": "{{ uid }}_analysis_row",
+        "component": {
+            "Column": {
+                "children": {
+                    "explicitList": ["{{ uid }}_stat_consensus", "{{ uid }}_stat_target"]
+                }
+            }
+        }
+      },
+      { "id": "{{ uid }}_stat_consensus", "component": { "Text": { "text": { "literalString": "• Consensus: {{ financials.recommendationKey }}" }, "usageHint": "body" } } },
+      { "id": "{{ uid }}_stat_target", "component": { "Text": { "text": { "literalString": "• Target Price: {{ financials.targetMeanPrice }}" }, "usageHint": "body" } } }
+    ]
+  },
+  "dataModelUpdate": {
+    "surfaceId": "stock_info",
+    "contents": []
+  },
+  "beginRendering": {
+    "surfaceId": "stock_info",
+    "root": "{{ uid }}_root"
+  }
+}

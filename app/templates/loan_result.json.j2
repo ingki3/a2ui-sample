@@ -1,0 +1,147 @@
+{
+  "surfaceUpdate": {
+    "surfaceId": "loan_calculator",
+    "components": [
+      {
+        "id": "{{ uid }}_root",
+        "component": {
+          "Column": {
+            "children": {
+              "explicitList": [
+                "{{ uid }}_header", "{{ uid }}_calc_icon", "{{ uid }}_divider1",
+                "{{ uid }}_input_section", "{{ uid }}_input_principal", "{{ uid }}_input_rate", "{{ uid }}_input_years",
+                "{{ uid }}_divider2", "{{ uid }}_results_section",
+                "{{ uid }}_result_monthly", "{{ uid }}_result_total", "{{ uid }}_result_interest", "{{ uid }}_result_breakdown",
+                "{{ uid }}_divider3", "{{ uid }}_comparison_title", "{{ uid }}_comparison_info",
+                "{{ uid }}_divider4", "{{ uid }}_recalc_section",
+                "{{ uid }}_new_principal", "{{ uid }}_new_rate", "{{ uid }}_new_years",
+                "{{ uid }}_calc_button_text", "{{ uid }}_calc_button"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": "{{ uid }}_header",
+        "component": { "Text": { "text": { "literalString": "🏦 Loan Payment Calculator" }, "usageHint": "h1" } }
+      },
+      {
+        "id": "{{ uid }}_calc_icon",
+        "component": { "Text": { "text": { "literalString": "Start planning your financial future today." }, "usageHint": "subtitle" } }
+      },
+      {
+        "id": "{{ uid }}_divider1",
+        "component": { "Text": { "text": { "literalString": "---" }, "usageHint": "caption" } }
+      },
+      {
+        "id": "{{ uid }}_input_section",
+        "component": { "Text": { "text": { "literalString": "Input Details" }, "usageHint": "h2" } }
+      },
+      {
+        "id": "{{ uid }}_input_principal",
+        "component": { "Text": { "text": { "literalString": "• Principal: ${{ principal }}" }, "usageHint": "body" } }
+      },
+      {
+        "id": "{{ uid }}_input_rate",
+        "component": { "Text": { "text": { "literalString": "• Rate: {{ rate }}%" }, "usageHint": "body" } }
+      },
+      {
+        "id": "{{ uid }}_input_years",
+        "component": { "Text": { "text": { "literalString": "• Duration: {{ years }} Years" }, "usageHint": "body" } }
+      },
+      {
+        "id": "{{ uid }}_divider2",
+        "component": { "Text": { "text": { "literalString": "---" }, "usageHint": "caption" } }
+      },
+      {
+        "id": "{{ uid }}_results_section",
+        "component": { "Text": { "text": { "literalString": "Your Estimated Payments" }, "usageHint": "h2" } }
+      },
+      {
+        "id": "{{ uid }}_result_monthly",
+        "component": { "Text": { "text": { "literalString": "💳 Monthly Payment: ${{ '{:,.2f}'.format(monthly) }}" }, "usageHint": "h2" } }
+      },
+      {
+        "id": "{{ uid }}_result_total",
+        "component": { "Text": { "text": { "literalString": "💰 Total Payment: ${{ '{:,.2f}'.format(total) }}" }, "usageHint": "body" } }
+      },
+      {
+        "id": "{{ uid }}_result_interest",
+        "component": { "Text": { "text": { "literalString": "📈 Total Interest: ${{ '{:,.2f}'.format(interest) }}" }, "usageHint": "body" } }
+      },
+      {
+        "id": "{{ uid }}_result_breakdown",
+        "component": { "Text": { "text": { "literalString": "(Principal: ${{ principal }} + Interest: ${{ '{:,.2f}'.format(interest) }})" }, "usageHint": "caption" } }
+      },
+      {
+        "id": "{{ uid }}_divider3",
+        "component": { "Text": { "text": { "literalString": "---" }, "usageHint": "caption" } }
+      },
+      {
+        "id": "{{ uid }}_comparison_title",
+        "component": { "Text": { "text": { "literalString": "Did you know?" }, "usageHint": "h3" } }
+      },
+      {
+        "id": "{{ uid }}_comparison_info",
+        "component": { "Text": { "text": { "literalString": "Paying slightly more each month can significantly reduce your total interest and shorten the loan term." }, "usageHint": "body" } }
+      },
+      {
+        "id": "{{ uid }}_divider4",
+        "component": { "Text": { "text": { "literalString": "---" }, "usageHint": "caption" } }
+      },
+      {
+        "id": "{{ uid }}_recalc_section",
+        "component": { "Text": { "text": { "literalString": "Recalculate" }, "usageHint": "h3" } }
+      },
+      {
+        "id": "{{ uid }}_new_principal",
+        "component": { "TextField": { "label": { "literalString": "Loan Amount ($)" }, "text": { "path": "/calculator/principal" } } }
+      },
+      {
+        "id": "{{ uid }}_new_rate",
+        "component": { "TextField": { "label": { "literalString": "APR (%)" }, "text": { "path": "/calculator/rate" } } }
+      },
+      {
+        "id": "{{ uid }}_new_years",
+        "component": { "TextField": { "label": { "literalString": "Years" }, "text": { "path": "/calculator/years" } } }
+      },
+      {
+        "id": "{{ uid }}_calc_button_text",
+        "component": { "Text": { "text": { "literalString": "Calculate Re-Payment" }, "usageHint": "button_label" } }
+      },
+      {
+        "id": "{{ uid }}_calc_button",
+        "component": {
+          "Button": {
+            "child": "{{ uid }}_calc_button_text",
+            "action": {
+              "name": "calculateLoan",
+              "context": [
+                { "key": "principal", "value": { "path": "/calculator/principal" } },
+                { "key": "annualRate", "value": { "path": "/calculator/rate" } },
+                { "key": "years", "value": { "path": "/calculator/years" } }
+              ]
+            }
+          }
+        }
+      }
+    ]
+  },
+  "dataModelUpdate": {
+    "surfaceId": "loan_calculator",
+    "contents": [
+      {
+        "key": "calculator",
+        "valueMap": [
+          { "key": "principal", "valueString": "{{ principal }}" },
+          { "key": "rate", "valueString": "{{ rate }}" },
+          { "key": "years", "valueString": "{{ years }}" }
+        ]
+      }
+    ]
+  },
+  "beginRendering": {
+    "surfaceId": "loan_calculator",
+    "root": "{{ uid }}_root"
+  }
+}
