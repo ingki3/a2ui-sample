@@ -36,7 +36,7 @@ class ColumnChildren(BaseModel):
 
 class ColumnComponent(ComponentBase):
     children: ColumnChildren
-    style: Optional[Dict[str, Any]] = None
+    style: Optional[Any] = None
 
 class ImageComponent(ComponentBase):
     url: TextContent
@@ -44,7 +44,7 @@ class ImageComponent(ComponentBase):
 
 class RowComponent(ComponentBase):
     children: ColumnChildren # Reuse ColumnChildren because structure is same (explicitList)
-    style: Optional[Dict[str, Any]] = None
+    style: Optional[Any] = None
 
 class ChartDataPoint(BaseModel):
     time: str

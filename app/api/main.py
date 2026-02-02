@@ -187,8 +187,12 @@ async def chat_stream(request: Request, chat_req: ChatRequest):
     is_a2ui_client = request.headers.get("x-client-a2ui") == "true"
     
     async def event_generator():
+        import logging
+        logger = logging.getLogger(__name__)
+        
         # Process the query
         processed = llm.process_query(text)
+        logger.info(f"Stream endpoint received query: {text[:50]}... | Type: {processed['type']}")
         
         if processed["type"] == "multiple_tool_calls":
             from app.services.agent import StockService, RestaurantService, LoanCalculatorService, ShoppingService
@@ -229,7 +233,9 @@ async def chat_stream(request: Request, chat_req: ChatRequest):
                 
                 elif tool_name == "get_stock_news":
                     symbol = args.get("symbol")
+                    print(f"Calling get_stock_news for symbol: {symbol}")
                     res, context = stock_service.get_stock_news(symbol)
+                    print(f"get_stock_news returned: type={type(res).__name__}")
                 
                 elif tool_name == "search_products":
                     query = args.get("query")
@@ -261,8 +267,11 @@ async def chat_stream(request: Request, chat_req: ChatRequest):
                 
                 # Send A2UI response if available
                 if res and isinstance(res, A2UIResponse):
+                    print(f"Sending A2UI event for tool: {tool_name}")
                     a2ui_data = res.model_dump()
                     yield f"event: a2ui\ndata: {json.dumps(a2ui_data)}\n\n"
+                else:
+                    print(f"NOT sending A2UI for {tool_name}, res type: {type(res).__name__ if res else 'None'}")
                 
                 if context:
                     context_accumulator.append(context)
@@ -274,8 +283,22 @@ async def chat_stream(request: Request, chat_req: ChatRequest):
                       await asyncio.sleep(0)
         
         else:
-            # Non-tool response
-            yield f"event: text\ndata: {json.dumps({'text': processed.get('text', '')})}\n\n"
+            # Non-tool response: Stream the response for consistency
+            logger.info(f"No tool call - streaming text response directly")
+            text_response = processed.get('text', '')
+            
+            # If LLM provided a text response, stream it
+            if text_response:
+                words = text_response.split(' ')
+                chunk_size = 3  # Send 3 words at a time
+                for i in range(0, len(words), chunk_size):
+                    chunk = ' '.join(words[i:i+chunk_size])
+                    if i + chunk_size < len(words):
+                        chunk += ' '
+                    yield f"event: text\ndata: {json.dumps({'text': chunk})}\n\n"
+                    await asyncio.sleep(0.02)
+            else:
+                yield f"event: text\ndata: {json.dumps({'text': '응답을 생성할 수 없습니다.'})}\n\n"
         
         # Signal completion
         yield f"event: done\ndata: {{}}\n\n"
