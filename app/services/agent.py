@@ -135,9 +135,10 @@ class RestaurantService:
     def find_places(self, location: str, keyword: str = None) -> Union[A2UIResponse, TextResponse]:
         print(f"Finding {keyword or 'places'} in {location}")
         
-        # Build search query
-        query = f"{location} 맛집"
+        # Build search query - keep original language from user
+        # The LLM may translate to English, so we need to handle both
         if keyword:
+            # Try direct query first
             query = f"{location} {keyword}"
         else:
             query = f"{location} 가볼만한곳"
@@ -147,13 +148,14 @@ class RestaurantService:
         
         if not places:
             print("No results from Naver API, using fallback mock data")
-            # Fallback to mock data
+            # Use keyword for fallback data
+            fallback_name = f"{keyword or '장소'} in {location}" if keyword else f"Place in {location}"
             places = [
                 {
                     "id": "p1",
-                    "name": "Seoul Hospital",
-                    "category": "Hospital",
-                    "rating": 4.8,
+                    "name": fallback_name,
+                    "category": keyword or "Place",
+                    "rating": 4.5,
                     "location": location,
                     "lat": 37.5665,
                     "lng": 126.9780,
@@ -197,12 +199,16 @@ class RestaurantService:
         context['uid'] = uid
         
         rendered_json_str = template.render(**context)
-        
+
         try:
             data_dict = json.loads(rendered_json_str)
-            return A2UIResponse(data=A2UIData(**data_dict))
+            print(f"Template rendered successfully for {template_name}")
+            result = A2UIResponse(data=A2UIData(**data_dict))
+            print(f"A2UIResponse created: kind={result.kind}")
+            return result
         except Exception as e:
-            print(f"Template Rendering Error: {e}")
+            print(f"Template Rendering Error for {template_name}: {e}")
+            print(f"Rendered JSON (first 500 chars): {rendered_json_str[:500]}")
             return TextResponse(text=f"Error rendering UI: {e}")
 
 class StockService(RestaurantService):

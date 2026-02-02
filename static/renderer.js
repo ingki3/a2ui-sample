@@ -15,15 +15,23 @@ function addMessage(text, isUser) {
 }
 
 function addA2UIWidget(a2uiData) {
+    console.log('addA2UIWidget called with:', a2uiData);
     try {
         const div = document.createElement('div');
-        div.className = 'message agent-msg';
+        div.className = 'message agent-msg a2ui-widget-container';
         div.style.width = '100%';
+        div.style.maxWidth = '100%';
         div.style.backgroundColor = 'transparent';
         div.style.padding = '0';
 
         const surfaceDiv = document.createElement('div');
         surfaceDiv.className = 'a2ui-surface';
+        surfaceDiv.style.background = '#FDFCFB';
+        surfaceDiv.style.border = '1px solid #D4D2CF';
+        surfaceDiv.style.borderRadius = '14px';
+        surfaceDiv.style.padding = '20px';
+        surfaceDiv.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.06)';
+        surfaceDiv.style.minHeight = '60px';
 
         // Process Data Model Updates
         if (a2uiData.dataModelUpdate && a2uiData.dataModelUpdate.contents) {
@@ -38,16 +46,25 @@ function addA2UIWidget(a2uiData) {
         }
 
         // Render Components
+        console.log('Checking surfaceUpdate:', a2uiData.surfaceUpdate);
+        console.log('Checking beginRendering:', a2uiData.beginRendering);
+
         if (a2uiData.surfaceUpdate && a2uiData.beginRendering) {
             const rootId = a2uiData.beginRendering.root;
+            console.log('Root ID:', rootId);
 
             // Safety check for components array
             const compList = a2uiData.surfaceUpdate.components || [];
+            console.log('Component list:', compList);
             const components = new Map(compList.map(c => [c.id, c.component]));
 
             const renderComponent = (id) => {
                 const comp = components.get(id);
-                if (!comp) return null;
+                console.log('Rendering component:', id, comp);
+                if (!comp) {
+                    console.warn('Component not found for id:', id);
+                    return null;
+                }
 
                 if (comp.Text) {
                     const hint = comp.Text.usageHint || 'body';
@@ -76,25 +93,26 @@ function addA2UIWidget(a2uiData) {
                     } else if (hint === 'news-header-title') {
                         el = document.createElement('h2');
                         el.style.margin = '0';
-                        el.style.fontSize = '18px';
-                        el.style.fontWeight = '600';
+                        el.style.fontSize = '1.1rem';
+                        el.style.fontWeight = '500';
+                        el.style.letterSpacing = '-0.01em';
                         el.innerText = text;
                     } else if (hint === 'news-header-subtitle') {
                         el = document.createElement('span');
-                        el.style.fontSize = '12px';
-                        el.style.opacity = '0.9';
+                        el.style.fontSize = '0.8rem';
+                        el.style.opacity = '0.85';
                         el.innerText = text;
                     } else if (hint === 'h2') {
                         el = document.createElement('h2');
-                        el.className = 'a2ui-news-title'; // Reuse news title style
-                        el.style.fontSize = '18px';
-                        el.style.fontWeight = 'bold';
+                        el.className = 'a2ui-news-title';
+                        el.style.fontSize = '1.1rem';
+                        el.style.fontWeight = '500';
                         el.innerText = text;
                     } else if (hint === 'h3') {
                         el = document.createElement('div');
-                        el.style.fontSize = '16px';
-                        el.style.fontWeight = 'bold';
-                        el.style.color = '#d32f2f'; // Red for price
+                        el.style.fontSize = '1rem';
+                        el.style.fontWeight = '500';
+                        el.style.color = '#8B5A5A'; // Muted terracotta
                         el.innerText = text;
                     } else if (hint === 'h1') {
                         el = document.createElement('h1');
@@ -193,13 +211,13 @@ function addA2UIWidget(a2uiData) {
                     } else if (style === 'product-row') {
                         row.className = 'a2ui-row';
                         row.style.display = 'flex';
-                        row.style.gap = '10px';
+                        row.style.gap = '12px';
                         row.style.width = '100%';
                     } else {
                         row.className = 'a2ui-row';
                         // Simple flex row style
                         row.style.display = 'flex';
-                        row.style.gap = '10px';
+                        row.style.gap = '12px';
                         row.style.alignItems = 'center';
                         row.style.overflowX = 'auto'; // safe for mobile
                     }
@@ -225,7 +243,7 @@ function addA2UIWidget(a2uiData) {
                     const altObj = comp.Image.altText || {};
                     img.alt = altObj.literalString || 'Image';
                     img.style.maxWidth = '100%';
-                    img.style.borderRadius = '8px';
+                    img.style.borderRadius = '12px';
                     return img;
                 } else if (comp.IFrame) {
                     const iframe = document.createElement('iframe');
@@ -234,8 +252,8 @@ function addA2UIWidget(a2uiData) {
                     iframe.src = urlObj.literalString;
                     iframe.style.width = comp.IFrame.width || '100%';
                     iframe.style.height = (comp.IFrame.height || 300) + 'px';
-                    iframe.style.border = 'none';
-                    iframe.style.borderRadius = '8px';
+                    iframe.style.border = '1px solid #E8E6E3';
+                    iframe.style.borderRadius = '12px';
                     iframe.setAttribute('loading', 'lazy');
                     iframe.setAttribute('allowfullscreen', '');
                     iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
@@ -245,7 +263,7 @@ function addA2UIWidget(a2uiData) {
                     chartContainer.className = 'a2ui-chart';
                     chartContainer.style.width = '100%';
                     chartContainer.style.height = '300px';
-                    chartContainer.style.padding = '10px 0';
+                    chartContainer.style.padding = '12px 0';
 
                     // Support both single data and multiple series
                     const singleData = comp.Chart.data || [];
@@ -268,13 +286,22 @@ function addA2UIWidget(a2uiData) {
                                 height: 300,
                                 layout: {
                                     background: { type: 'solid', color: 'transparent' },
-                                    textColor: '#333',
+                                    textColor: '#4A4A4A',
+                                    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
                                 },
                                 grid: {
-                                    vertLines: { color: '#eee' },
-                                    horzLines: { color: '#eee' },
+                                    vertLines: { color: '#E8E6E3' },
+                                    horzLines: { color: '#E8E6E3' },
                                 },
                             });
+
+                            // Scandinavian color palette for charts
+                            const scandinavianColors = {
+                                primary: '#4A5D4A',    // Sage green
+                                secondary: '#8B7355',  // Warm taupe
+                                tertiary: '#5D6B7A',   // Slate blue-gray
+                                accent: '#8B5A5A',     // Muted terracotta
+                            };
 
                             // If we have series array, render multiple lines
                             if (seriesData.length > 0) {
@@ -283,17 +310,19 @@ function addA2UIWidget(a2uiData) {
 
                                     if (index === 0) {
                                         // First series (Price) as Area chart
+                                        const color = series.color || scandinavianColors.primary;
                                         const areaSeries = chart.addSeries(LightweightCharts.AreaSeries, {
-                                            lineColor: series.color || '#0F9D58',
-                                            topColor: (series.color || '#0F9D58') + '66',
-                                            bottomColor: (series.color || '#0F9D58') + '04',
+                                            lineColor: color,
+                                            topColor: color + '40',
+                                            bottomColor: color + '08',
                                             lineWidth: 2,
                                         });
                                         areaSeries.setData(series.data);
                                     } else {
                                         // Moving averages as Line charts
+                                        const colors = [scandinavianColors.secondary, scandinavianColors.tertiary, scandinavianColors.accent];
                                         const lineSeries = chart.addSeries(LightweightCharts.LineSeries, {
-                                            color: series.color || '#2962FF',
+                                            color: series.color || colors[(index - 1) % colors.length],
                                             lineWidth: 1,
                                         });
                                         lineSeries.setData(series.data);
@@ -301,10 +330,11 @@ function addA2UIWidget(a2uiData) {
                                 });
                             } else {
                                 // Legacy: single data array
+                                const color = comp.Chart.color || scandinavianColors.primary;
                                 const areaSeries = chart.addSeries(LightweightCharts.AreaSeries, {
-                                    lineColor: comp.Chart.color || '#2962FF',
-                                    topColor: (comp.Chart.color || '#2962FF') + '66',
-                                    bottomColor: (comp.Chart.color || '#2962FF') + '04',
+                                    lineColor: color,
+                                    topColor: color + '40',
+                                    bottomColor: color + '08',
                                 });
                                 areaSeries.setData(singleData);
                             }
@@ -329,11 +359,21 @@ function addA2UIWidget(a2uiData) {
             };
 
             const rootEl = renderComponent(rootId);
-            if (rootEl) surfaceDiv.appendChild(rootEl);
+            console.log('Root element created:', rootEl);
+            if (rootEl) {
+                surfaceDiv.appendChild(rootEl);
+            } else {
+                console.warn('Root element is null, adding placeholder text');
+                surfaceDiv.innerText = '[Empty UI Component]';
+            }
+        } else {
+            console.warn('Missing surfaceUpdate or beginRendering, adding raw data display');
+            surfaceDiv.innerText = JSON.stringify(a2uiData, null, 2);
         }
 
         div.appendChild(surfaceDiv);
         messagesDiv.appendChild(div);
+        console.log('Widget added to messages');
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
     } catch (e) {
         console.error("UI Render Error:", e);
